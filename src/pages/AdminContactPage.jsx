@@ -1,7 +1,7 @@
 
 
 
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { collection, getDocs, orderBy, query, limit } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { FaEnvelope, FaPhone } from "react-icons/fa";
@@ -16,7 +16,8 @@ const AdminContactMessages = () => {
       try {
         const q = query(
           collection(db, "contactMessages"),
-          orderBy("createdAt", "desc")
+          orderBy("createdAt", "desc"),
+          limit(100)
         );
         const querySnapshot = await getDocs(q);
 

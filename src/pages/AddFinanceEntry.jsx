@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from "react";
 import { db, auth } from "../firebase";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
@@ -74,7 +72,7 @@ export default function AddFinanceEntry() {
       date: Timestamp.now(),
     });
 
-    alert("Entry Added ✅");
+    toast.success("Entry added successfully");
 
     // Reset form
     setProduct("");

@@ -1,5 +1,5 @@
-// src/components/ReceiptInvoice.jsx
 import jsPDF from "jspdf";
+import { Download } from "lucide-react";
 
 const ReceiptInvoice = ({ order }) => {
   const generatePDF = () => {
@@ -114,9 +114,11 @@ const ReceiptInvoice = ({ order }) => {
 
   return (
     <button
-      className="btn btn-outline-secondary btn-sm mt-2"
+      type="button"
       onClick={generatePDF}
+      className="inline-flex items-center gap-2 rounded-xl border border-primary/30 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-primary hover:text-white transition-colors"
     >
+      <Download size={16} />
       Download Receipt
     </button>
   );

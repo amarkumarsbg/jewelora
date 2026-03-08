@@ -1,75 +1,131 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@import "tailwindcss";
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+@theme {
+  --color-primary: #1E3A5F;
+  --color-primary-dark: #0F2744;
+  --color-primary-light: #E8EEF4;
+  --color-secondary: #C9A227;
+  --color-accent: #B8860B;
+  --color-neutral-dark: #2D2A32;
+  --color-neutral-mid: #8B8589;
+  --color-cream: #FBF9F7;
+  --color-linen: #F5F0EB;
+  --color-success: #7EB09B;
+  --color-warning: #E8B86D;
+  --color-error: #E07A7A;
+  --color-border: #F0EBE6;
+  --color-input: #E8E3DE;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+  --font-heading: 'Cormorant Garamond', serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-card-hover: 0 20px 40px -15px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.03);
+  --shadow-nav: 0 1px 0 rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.04);
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+@layer base {
+  html {
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--color-neutral-dark);
+    background-color: var(--color-cream);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
   }
-  a:hover {
-    color: #747bff;
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    line-height: 1.25;
+    font-weight: 500;
+    color: var(--color-neutral-dark);
+    letter-spacing: -0.02em;
   }
-  button {
-    background-color: #f9f9f9;
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  ::selection {
+    background-color: var(--color-primary-light);
+    color: var(--color-neutral-dark);
+  }
+
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+  }
+
+  /* Modern focus ring */
+  *:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
   }
 }
-.hover-zoom {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
-.hover-zoom:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--color-cream) 25%, var(--color-linen) 50%, var(--color-cream) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.5rem;
+}
+
+/* Modern card hover */
+.card-modern {
+  box-shadow: var(--shadow-card);
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    box-shadow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  isolation: isolate;
+}
+.card-modern:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+  z-index: 10;
+}
+
+/* Hide scrollbar for horizontal scroll areas */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Shared form input styling - use .input-modern for consistency */
+.input-modern {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0,0,0,0.1);
+  background-color: white;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--color-neutral-dark);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.input-modern::placeholder {
+  color: var(--color-neutral-mid);
+}
+.input-modern:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.2);
+  outline: none;
 }

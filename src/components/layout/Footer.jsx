@@ -1,11 +1,17 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Facebook, Instagram } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useAuth } from "../../context/AuthContext"; // adjust path if needed
+import { Facebook, Instagram, Shield, Truck, RotateCcw, CreditCard } from "lucide-react";
+import { FaWhatsapp, FaXTwitter } from "react-icons/fa6";
+import { useAuth } from "../../context/AuthContext";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../../firebase";
+import toast from "react-hot-toast";
 
 const Footer = () => {
   const { currentUser, logout } = useAuth();
-  const [animate, setAnimate] = useState(false);
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -13,87 +19,124 @@ const Footer = () => {
       console.error("Logout failed:", error);
     }
   };
-  useEffect(() => {
-    setTimeout(() => setAnimate(true), 200);
-  }, []);
+
+  const handleNewsletterSubmit = async (e) => {
+    e.preventDefault();
+    if (!newsletterEmail?.trim()) return;
+    setNewsletterLoading(true);
+    try {
+      await addDoc(collection(db, "newsletter"), {
+        email: newsletterEmail.trim(),
+        createdAt: new Date(),
+      });
+      setNewsletterEmail("");
+      toast.success("Thanks for subscribing! Check your inbox for 10% off.");
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setNewsletterLoading(false);
+    }
+  };
 
   return (
-    <footer
-      className="pt-5 pb-4 mt-5"
-      style={{
-        color: "#3b2f2f", // ✅ deep luxury brown text color
-        background:
-          // "linear-gradient(135deg, #f0c92f, #f1b132ff, #ffb84d, #ffa31a)",
-          "linear-gradient(135deg, #f9d423, #ffb347, #f39c12, #ffcc33)",
-        backgroundSize: "300% 300%",
-        animation: "gradientShift 8s ease infinite",
-        fontFamily: "'Poppins', sans-serif",
-      }}
-    >
-      <div className={`container ${animate ? "fade-in" : ""}`}>
-        <div className="row gy-5">
-          {/* Brand + Social */}
-          <div className="col-lg-3 col-md-6 text-center text-md-start footer-section">
-            <div className="d-flex align-items-center justify-content-center justify-content-md-start mb-3">
-              <img
-                src={
-                  "https://res.cloudinary.com/dvxaztwnz/image/upload/v1754728677/jewelora_rlc5cq.jpg"
-                }
-                alt="Logo"
-                width="95"
-                height="91"
-                className="me-2 rounded-circle border border-light shadow"
-              />
-              <h5
-                className="mb-0 fw-bold"
-                style={{ fontFamily: "'Playfair Display', serif" }}
-              >
-                Jewelora
-              </h5>
+    <footer className="bg-[#1a1a1a] text-white pt-20 pb-12 mt-auto">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Trust badges */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16 pb-12 border-b border-white/20">
+          {[
+            { icon: Shield, label: "Secure Checkout", desc: "100% safe payment" },
+            { icon: Truck, label: "Free Shipping", desc: "On orders over ₹999" },
+            { icon: RotateCcw, label: "Easy Returns", desc: "Hassle-free exchanges" },
+            { icon: CreditCard, label: "Secure Payment", desc: "Razorpay protected" },
+          ].map(({ icon: Icon, label, desc }) => (
+            <div key={label} className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <Icon className="text-primary" size={22} />
+              </div>
+              <div>
+                <p className="font-semibold text-white text-sm">{label}</p>
+                <p className="text-white/60 text-xs">{desc}</p>
+              </div>
             </div>
-            <p className="small">
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+          {/* Brand + Social */}
+          <div className="flex flex-col items-center md:items-start">
+            <div className="flex items-center gap-3 mb-4">
+              <img
+                src="https://res.cloudinary.com/dvxaztwnz/image/upload/v1754728677/jewelora_rlc5cq.jpg"
+                alt="Jewelora"
+                width={56}
+                height={56}
+                className="rounded-xl object-contain"
+                style={{ maxWidth: 56, maxHeight: 56 }}
+              />
+              <span className="font-heading text-xl font-bold text-white">
+                Jewelora
+              </span>
+            </div>
+            <p className="text-sm text-white/70 text-center md:text-left mb-4">
               Discover timeless elegance. Premium crafted jewelry just for you.
             </p>
-            <div className="d-flex gap-3 justify-content-center justify-content-md-start mt-3">
+            <div className="flex flex-wrap gap-3 items-center">
+              <a
+                href="https://wa.me/919129987687?text=Hi!%20I'd%20like%20to%20know%20more%20about%20your%20jewelry%20collection."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2.5 rounded-full bg-[#25D366] text-white hover:bg-[#20BD5A] hover:scale-110 transition-all"
+                aria-label="Chat on WhatsApp"
+              >
+                <FaWhatsapp size={20} />
+              </a>
+              <a
+                href="https://x.com/jew_elora"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 hover:scale-110 transition-all"
+                aria-label="X (Twitter)"
+              >
+                <FaXTwitter size={20} />
+              </a>
               <a
                 href="https://www.instagram.com/jew_elora"
-                className="fs-5 social-icon"
-                style={{ color: "#3b2f2f" }}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2.5 rounded-full bg-white/10 hover:bg-primary transition-colors"
+                aria-label="Instagram"
               >
-                <Instagram />
+                <Instagram size={20} />
               </a>
               <a
                 href="https://www.facebook.com/share/1CcdEpJRH4/"
-                className="fs-5 social-icon"
-                style={{ color: "#3b2f2f" }}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2.5 rounded-full bg-white/10 hover:bg-primary transition-colors"
+                aria-label="Facebook"
               >
-                <Facebook />
+                <Facebook size={20} />
               </a>
             </div>
           </div>
 
           {/* Shop + Explore */}
-          <div className="col-lg-3 col-md-6 text-center text-md-start footer-section">
-            <h6
-              className="fw-bold mb-3"
-              style={{ fontFamily: "'Playfair Display', serif" }}
-            >
+          <div>
+            <h6 className="font-heading font-semibold text-white mb-5">
               Shop + Explore
             </h6>
-            <ul className="list-unstyled small">
+            <ul className="space-y-3">
               {[
                 { to: "/shop", label: "Shop it All" },
                 { to: "/", label: "Home" },
                 { to: "/category", label: "Categories" },
                 { to: "/about", label: "About Us" },
                 { to: "/contact", label: "Contact" },
-                // { to: "/cart", label: "Cart" },
-              ].map((link, i) => (
-                <li key={i}>
+              ].map((link) => (
+                <li key={link.to}>
                   <Link
                     to={link.to}
-                    className="text-decoration-none footer-link"
-                    style={{ color: "#3b2f2f" }}
+                    className="text-sm text-white/70 hover:text-white transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -102,185 +145,95 @@ const Footer = () => {
             </ul>
           </div>
 
-          <div className="col-lg-2 col-md-6 text-center text-md-start footer-section">
-            <h6
-              className="fw-bold mb-3"
-              style={{ fontFamily: "'Playfair Display', serif" }}
-            >
+          {/* Info */}
+          <div>
+            <h6 className="font-heading font-semibold text-white mb-5">
               Info
             </h6>
-            <ul className="list-unstyled small">
+            <ul className="space-y-3 text-sm text-white/70">
               {currentUser && (
                 <>
                   <li>
-                    <Link
-                      to="/account"
-                      className="text-decoration-none footer-link"
-                      style={{ color: "#3b2f2f" }}
-                    >
-                      Account
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/orders"
-                      className="text-decoration-none footer-link"
-                      style={{ color: "#3b2f2f" }}
-                    >
+                    <Link to="/orders" className="hover:text-white transition-colors">
                       My Orders
                     </Link>
                   </li>
                   <li>
-                    <Link
-                      to="/cart"
-                      className="text-decoration-none footer-link"
-                      style={{ color: "#3b2f2f" }}
-                    >
+                    <Link to="/cart" className="hover:text-white transition-colors">
                       Cart
                     </Link>
                   </li>
                   <li>
                     <button
+                      type="button"
                       onClick={handleLogout}
-                      className="btn btn-link p-0 text-decoration-none footer-link fw-bold"
-                      style={{ color: "#3b2f2f" }}
+                      className="text-left hover:text-white transition-colors font-medium"
                     >
                       Logout
                     </button>
                   </li>
                 </>
               )}
-              <li>
-                <Link to="/policies/terms">Terms</Link>
-              </li>
-              <li>
-                <Link to="/policies/privacy">Privacy</Link>
-              </li>
-              <li>
-                {" "}
-                <Link to="/policies/refund">Refund</Link>
-              </li>
-              <li>
-                {" "}
-                <Link to="/policies/replacement">Replacement</Link>
-              </li>
-              <li>
-                {" "}
-                <Link to="/policies/cancellation">Cancellation</Link>
-              </li>
-              <li>
-                {" "}
-                <Link to="/policies/shipping">Shipping</Link>
-              </li>
-
+              <li><Link to="/policies/terms" className="hover:text-white transition-colors">Terms</Link></li>
+              <li><Link to="/policies/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
+              <li><Link to="/policies/refund" className="hover:text-white transition-colors">Refund</Link></li>
+              <li><Link to="/policies/replacement" className="hover:text-white transition-colors">Replacement</Link></li>
+              <li><Link to="/policies/cancellation" className="hover:text-white transition-colors">Cancellation</Link></li>
+              <li><Link to="/policies/shipping" className="hover:text-white transition-colors">Shipping</Link></li>
+              <li><Link to="/faq" className="hover:text-white transition-colors">FAQ</Link></li>
+              <li><Link to="/add-review" className="hover:text-white transition-colors">Give Review</Link></li>
               <li>
                 <a
                   href="https://collaboration.payment.jewelora.in"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-decoration-none footer-link"
-                  style={{ color: "#3b2f2f" }}
+                  className="hover:text-primary transition-colors"
                 >
                   Collaborate With Us
                 </a>
               </li>
-
               {!currentUser && (
                 <li>
-                  <Link
-                    to="/signin"
-                    className="fw-bold text-decoration-none footer-link"
-                    style={{ color: "#3b2f2f" }}
-                  >
+                  <Link to="/signin" className="font-semibold hover:text-primary transition-colors">
                     Sign In
                   </Link>
                 </li>
               )}
             </ul>
           </div>
+
           {/* Newsletter */}
-          <div className="col-lg-4 col-md-6 text-center text-md-start footer-section">
-            <h6
-              className="fw-bold mb-3 typing-text"
-              style={{ fontFamily: "'Playfair Display', serif" }}
-            >
+          <div>
+            <h6 className="font-heading font-semibold text-white mb-5">
               Refresh Your Inbox
             </h6>
-            <p className="small">
-              Join our email list to get 10% off your first order, plus early
-              access to offers.
+            <p className="text-sm text-white/70 mb-4">
+              Join our email list to get 10% off your first order, plus early access to offers.
             </p>
-            <form className="d-flex flex-column flex-sm-row gap-2 mt-3">
+            <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3">
               <input
                 type="email"
-                className="form-control rounded-pill px-3"
                 placeholder="Email address"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                required
+                className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/50 focus:border-primary focus:ring-2 focus:ring-primary/30 focus:outline-none transition-all"
               />
               <button
-                className="btn rounded-pill px-5 fw-bold"
                 type="submit"
-                style={{ backgroundColor: "#3b2f2f", color: "#fdf5e6" }}
+                disabled={newsletterLoading}
+                className="bg-primary text-white rounded-xl px-6 py-3 text-sm font-semibold hover:bg-primary-dark transition-colors whitespace-nowrap disabled:opacity-70"
               >
-                Sign Up
+                {newsletterLoading ? "Signing up..." : "Sign Up"}
               </button>
             </form>
           </div>
         </div>
 
-        <hr className="my-4" style={{ borderColor: "#3b2f2f" }} />
-
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-          <div className="small">
-            &copy; {new Date().getFullYear()} Jewelora. All Rights Reserved.
-          </div>
+        <div className="mt-16 pt-8 border-t border-white/20 text-center text-sm text-white/60">
+          &copy; {new Date().getFullYear()} Jewelora. All Rights Reserved.
         </div>
       </div>
-
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Poppins:wght@400;500&display=swap');
-        @keyframes gradientShift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes typing {
-          from { width: 0; }
-          to { width: 100%; }
-        }
-        .fade-in {
-          animation: fadeUp 0.8s ease forwards;
-        }
-        .footer-section {
-          animation: fadeUp 0.8s ease forwards;
-          animation-delay: 0.2s;
-          opacity: 0;
-        }
-        .footer-section:nth-child(2) { animation-delay: 0.4s; }
-        .footer-section:nth-child(3) { animation-delay: 0.6s; }
-        .footer-section:nth-child(4) { animation-delay: 0.8s; }
-        .footer-link:hover {
-          color: #fdf5e6 !important;
-          font-size: 1.05em;
-          text-decoration: underline;
-          transition: all 0.3s ease;
-        }
-        .social-icon:hover {
-          color: #fdf5e6 !important;
-          transform: scale(1.15);
-          transition: all 0.3s ease;
-        }
-        .typing-text {
-          overflow: hidden;
-          white-space: nowrap;
-          display: inline-block;
-          border-right: 2px solid #3b2f2f;
-          animation: typing 1.5s steps(20, end) forwards;
-        }
-      `}</style>
     </footer>
   );
 };

@@ -1,23 +1,31 @@
-
-
-
-import { useParams, useNavigate } from "react-router-dom";
-import products from "../components/shop/product.js";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import products from "../components/shop/product";
 import { useAuth } from "../context/AuthContext";
 import { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import FeaturedProducts from "../components/home/FeatureProducts";
+import { motion } from "framer-motion";
+import toast from "react-hot-toast";
+import { Share2 } from "lucide-react";
+import Breadcrumbs from "../components/ui/Breadcrumbs";
+import { ProductDetailSkeleton } from "../components/ui/Skeleton";
+import ProductImageGallery from "../components/ProductImageGallery";
+import NotifyBackInStock from "../components/NotifyBackInStock";
+import SizeGuideModal from "../components/SizeGuideModal";
+import { useRecentlyViewed, useTrackProduct } from "../context/RecentlyViewedContext";
+import { useAddToCartAnimation } from "../context/AddToCartAnimationContext";
+import { useAllProducts } from "../hooks/useProducts";
 
-import FeaturedProducts from "../components/home/FeatureProducts.jsx";
 const ProductDetail = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { id } = useParams();
   const [dynamicProduct, setDynamicProduct] = useState(null);
   const [customDetails, setCustomDetails] = useState("");
-
   const [loading, setLoading] = useState(true);
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
   const localProduct = products.find((p) => String(p.id) === id);
 
@@ -29,14 +37,12 @@ const ProductDetail = () => {
         return;
       }
       try {
-        // First try: fetch by Firestore doc ID
         const prodRef = doc(db, "dynamic_products", id);
         const docSnap = await getDoc(prodRef);
 
         if (docSnap.exists()) {
           setDynamicProduct({ id: docSnap.id, ...docSnap.data() });
         } else {
-          // Fallback: search by 'id' field in document
           const q = query(
             collection(db, "dynamic_products"),
             where("id", "==", id)
@@ -57,14 +63,34 @@ const ProductDetail = () => {
   }, [id, localProduct]);
 
   const product = localProduct || dynamicProduct;
+  useTrackProduct(product);
+
+  const { triggerAddAnimation } = useAddToCartAnimation();
+  const { data: allProducts = [] } = useAllProducts();
+  const { items: recentlyViewed } = useRecentlyViewed();
+  const relatedProducts = allProducts
+    .filter((p) => (p.firestoreId || p.id) !== (product?.firestoreId || product?.id) && p.category === product?.category)
+    .slice(0, 4);
+
+  const handleShare = () => {
+    const url = window.location.href;
+    const text = `${product?.name} - ₹${product?.salePrice || product?.price}`;
+    if (navigator.share) {
+      navigator.share({ title: product?.name, text, url });
+    } else {
+      navigator.clipboard.writeText(url);
+      toast.success("Link copied!");
+    }
+  };
 
   const handleAddToCart = async () => {
     if (!currentUser) {
-      alert("Please sign in to add items to cart.");
+      toast("Please sign in to add items to cart.");
       return;
     }
 
-    const cartItemRef = doc(db, "carts", currentUser.uid, "items", product.id);
+    const productId = product.id || product.firestoreId || id;
+    const cartItemRef = doc(db, "carts", currentUser.uid, "items", productId);
 
     try {
       const existing = await getDoc(cartItemRef);
@@ -72,12 +98,11 @@ const ProductDetail = () => {
       if (existing.exists()) {
         await updateDoc(cartItemRef, {
           quantity: existing.data().quantity + 1,
-          customDetails: customDetails || existing.data().customDetails || "", // ✅ Save/Update details
-      
+          customDetails: customDetails || existing.data().customDetails || "",
         });
       } else {
         await setDoc(cartItemRef, {
-          productId: product.id,
+          productId: productId,
           name: product.name,
           price: product.salePrice || product.price,
           image: product.image || product.imageUrl,
@@ -85,130 +110,200 @@ const ProductDetail = () => {
           customDetails: customDetails,
         });
       }
-      alert("Added to cart successfully!");
+      triggerAddAnimation();
+      toast.success("Added to cart!");
     } catch (err) {
       console.error("Error adding to cart:", err);
-      alert("Something went wrong while adding to cart.");
+      toast.error("Something went wrong while adding to cart.");
     }
   };
 
-  // const goToCheckout = () => {
-  //   navigate("/checkout", { state: { product } });
-  // };
   const goToCheckout = () => {
-  const checkoutProduct = {
-    ...product,
-    price: product.salePrice || product.price,
-    customDetails: customDetails, // ✅ force sale price priority
+    const checkoutProduct = {
+      ...product,
+      price: product.salePrice || product.price,
+      customDetails: customDetails,
+    };
+    navigate("/checkout", { state: { product: checkoutProduct } });
   };
-  navigate("/checkout", { state: { product: checkoutProduct } });
-};
 
-
-  if (loading) {
-    return <div className="container py-5 text-center">Loading product...</div>;
-  }
+  if (loading) return <ProductDetailSkeleton />;
 
   if (!product) {
-    return <div className="container py-5 text-center">Product not found.</div>;
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-12 text-center text-neutral-mid">
+        Product not found.
+      </div>
+    );
   }
 
+  const displayPrice = product.salePrice || product.price;
+
   return (
-    <div className="container py-5">
-      <div className="row align-items-start g-5">
-        {/* Product Image */}
-        <div className="col-md-6 text-center">
-          <div
-            className="shadow rounded p-3 bg-white"
-            style={{ border: "1px solid #f2f2f2" }}
-          >
-            <img
-              src={product.image || product.imageUrl}
-              alt={product.name}
-              className="img-fluid rounded"
-              style={{
-                maxWidth: "100%",
-                height: "auto",
-                objectFit: "contain",
-                transition: "transform 0.3s ease-in-out",
-              }}
-              onMouseOver={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-              onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1)")}
-            />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+        <Breadcrumbs
+          items={
+            product.category
+              ? [
+                  { label: "Shop", to: "/shop" },
+                  { label: product.category, to: `/shop?category=${encodeURIComponent(product.category)}` },
+                  { label: product.name },
+                ]
+              : [{ label: "Shop", to: "/shop" }, { label: product.name }]
+          }
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+          {/* Product Image */}
+          <div className="md:col-span-3">
+            <div className="bg-white border border-border rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+              <ProductImageGallery product={product} />
+            </div>
+          </div>
+
+          {/* Product Details */}
+          <div className="md:col-span-2">
+            <h1 className="font-heading text-3xl font-medium text-neutral-dark mb-4">
+              {product.name}
+            </h1>
+
+            <div className="mb-6 text-neutral-mid text-sm leading-relaxed">
+              <ReactMarkdown>{product.description}</ReactMarkdown>
+            </div>
+
+            <p className="font-semibold text-2xl text-primary mb-6">
+              ₹{typeof displayPrice === "number" ? displayPrice : displayPrice}
+            </p>
+
+            {(product.stock === 0 || (product.stock > 0 && product.stock <= 5)) && (
+              <div className="mb-4">
+                <p className="text-sm font-semibold">
+                  {product.stock === 0 ? (
+                    <span className="text-error">Out of stock</span>
+                  ) : (
+                    <span className="text-warning">Only {product.stock} left</span>
+                  )}
+                </p>
+                {product.stock === 0 && (
+                  <NotifyBackInStock productId={product.firestoreId || product.id} productName={product.name} />
+                )}
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                className="flex-1 min-w-[140px] bg-primary text-white rounded-full px-6 py-3 text-sm font-semibold hover:bg-primary-dark transition-colors"
+              >
+                Add to Bag
+              </button>
+
+              <button
+                type="button"
+                onClick={goToCheckout}
+                className="flex-1 min-w-[140px] bg-accent text-white rounded-full px-6 py-3 text-sm font-semibold hover:brightness-90 transition-all"
+              >
+                Buy Now
+              </button>
+              <button
+                type="button"
+                onClick={handleShare}
+                className="p-3 rounded-full border-2 border-neutral-dark/20 text-neutral-dark hover:border-primary hover:text-primary transition-colors"
+                aria-label="Share"
+              >
+                <Share2 size={20} />
+              </button>
+            </div>
+
+            <div className="mt-6">
+              <label className="block font-semibold text-neutral-dark mb-2">
+                Add Custom Details (optional):
+              </label>
+              <textarea
+                className="w-full rounded-sm border border-input bg-white px-4 py-3 text-sm placeholder:text-neutral-mid/50 focus:border-primary focus:shadow-[0_0_0_3px_rgba(232,160,191,0.1)] focus:outline-none transition-all"
+                rows={3}
+                placeholder="E.g., Bangle size: 2.4, Preferred color: Silver"
+                value={customDetails}
+                onChange={(e) => setCustomDetails(e.target.value)}
+              />
+            </div>
+
+            {/* Sticky add-to-cart bar (mobile) */}
+            <div className="lg:hidden fixed bottom-20 left-0 right-0 z-30 p-4 bg-white border-t border-black/10 flex gap-3 safe-area-pb">
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={product.stock === 0}
+                className="flex-1 bg-primary text-white rounded-full py-3 font-semibold disabled:opacity-50"
+              >
+                Add to Bag
+              </button>
+              <button
+                type="button"
+                onClick={goToCheckout}
+                disabled={product.stock === 0}
+                className="flex-1 bg-accent text-white rounded-full py-3 font-semibold disabled:opacity-50"
+              >
+                Buy Now
+              </button>
+            </div>
+
+            <p className="mt-6 text-neutral-mid text-sm">
+              ✨ Free Shipping over ₹999 | Easy Returns | 5–8 days delivery
+            </p>
+            <button
+              type="button"
+              onClick={() => setSizeGuideOpen(true)}
+              className="mt-2 text-sm text-primary hover:underline font-medium"
+            >
+              Size Guide →
+            </button>
           </div>
         </div>
 
-        {/* Product Details */}
-        <div className="col-md-6">
-          <h1 className="fw-bold mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
-            {product.name}
-          </h1>
+        <SizeGuideModal isOpen={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} />
 
-          <div
-            className="mb-4 text-secondary"
-            style={{
-              fontSize: "1.05rem",
-              lineHeight: "1.8",
-              fontFamily: "'Roboto', sans-serif",
-            }}
-          >
-            <ReactMarkdown>{product.description}</ReactMarkdown>
+        {(relatedProducts.length > 0 || recentlyViewed.length > 0) && (
+          <div className="mt-16">
+            <h3 className="font-heading text-2xl font-medium text-neutral-dark mb-6">
+              {relatedProducts.length > 0 ? "You May Also Like" : "Recently Viewed"}
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
+              {(relatedProducts.length > 0 ? relatedProducts : recentlyViewed.slice(0, 4)).map((p) => (
+                <Link
+                  key={p.firestoreId || p.id}
+                  to={`/product/${p.firestoreId || p.id}`}
+                  className="bg-white rounded-xl border border-black/5 overflow-hidden group hover:shadow-lg transition-shadow"
+                >
+                  <div className="aspect-square p-4 flex items-center justify-center bg-white">
+                    <img
+                      src={p.image || p.imageUrl}
+                      alt={p.name}
+                      className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform"
+                    />
+                  </div>
+                  <div className="p-3">
+                    <p className="font-medium text-sm line-clamp-2 text-neutral-dark">{p.name}</p>
+                    <p className="text-primary font-semibold text-sm">₹{p.price ?? p.salePrice ?? "—"}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
+        )}
 
-          <h3 className="text-warning fw-bold mb-4" style={{ fontSize: "1.8rem" }}>
-            {product.salePrice || product.price}
-          </h3>
-
-          <div className="d-flex gap-3">
-            <button
-              className="btn btn-warning fw-semibold px-4 py-2 shadow-sm"
-              style={{
-                borderRadius: "30px",
-                transition: "all 0.3s ease",
-              }}
-              onMouseOver={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-              onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1)")}
-              onClick={handleAddToCart}
-            >
-              🛒 Add to Cart
-            </button>
-
-            <button
-              className="btn btn-success fw-semibold px-4 py-2 shadow-sm"
-              style={{
-                borderRadius: "30px",
-                transition: "all 0.3s ease",
-              }}
-              onMouseOver={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-              onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1)")}
-              onClick={goToCheckout}
-            >
-              💎 Buy Now
-            </button>
-          </div>
-          <div className="mt-4">
-  <label className="fw-semibold mb-2">Add Custom Details (optional):</label>
-  <textarea
-    className="form-control shadow-sm"
-    rows="3"
-    placeholder="E.g., Bangle size: 2.4, Preferred color: Silver"
-    value={customDetails}
-    onChange={(e) => setCustomDetails(e.target.value)}
-    style={{ borderRadius: "12px" }}
-  />
-</div>
-
-
-          <p className="mt-4 text-muted small">
-            ✨ Free Shipping over 999 | Easy Returns
-          </p>
+        <div className="mt-16">
+          <FeaturedProducts />
         </div>
       </div>
-    <FeaturedProducts/>
-    </div>
-    
+    </motion.div>
   );
-  
 };
 
 export default ProductDetail;

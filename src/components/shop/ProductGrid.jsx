@@ -1,62 +1,34 @@
-
-
-
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { db } from "../../firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { useMemo, useState } from "react";
+import { useAllProducts } from "../../hooks/useProducts";
+import { useProductRatings } from "../../hooks/useProductRatings";
+import { useWishlist } from "../../context/WishlistContext";
+import OptimizedImage from "../OptimizedImage";
+import { motion } from "framer-motion";
+import { Heart, Eye } from "lucide-react";
+import toast from "react-hot-toast";
+import QuickViewModal from "../QuickViewModal";
+import { ProductCardSkeleton } from "../ui/Skeleton";
 
-const ProductGrid = ({ category, searchTerm = "", sortOrder = "" }) => {
-  const [visibleProducts, setVisibleProducts] = useState([]);
-  const [allProducts, setAllProducts] = useState([]);
+const ProductGrid = ({ category, searchTerm = "", sortOrder = "", minPrice, maxPrice }) => {
+  const { data: allProducts = [], isLoading } = useAllProducts();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const [quickViewProduct, setQuickViewProduct] = useState(null);
 
-  // 🔹 FETCH FROM FIREBASE ONLY
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const q = query(
-          collection(db, "dynamic_products"),
-          where("visible", "==", true)
-        );
-
-        const snapshot = await getDocs(q);
-        const products = snapshot.docs.map((doc) => {
-          const p = doc.data();
-
-          return {
-            ...p,
-            firestoreId: doc.id,
-            price: Number(p.price) || 0,
-            salePrice: p.salePrice ? Number(p.salePrice) : null,
-            image: p.imageUrl, // 🔑 map for existing UI
-          };
-        });
-
-        // ✅ keep only in-stock products
-        setAllProducts(products.filter((p) => p.stock > 0));
-      } catch (err) {
-        console.error("Error fetching products:", err);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
-  // 🔹 FILTER + SORT (UNCHANGED LOGIC)
-  useEffect(() => {
+  const visibleProducts = useMemo(() => {
     let filtered = allProducts.filter((product) => {
       const matchCategory = category
         ? product.category?.toLowerCase() === category.toLowerCase()
         : true;
-
       const matchSearch = searchTerm
         ? product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           product.category?.toLowerCase().includes(searchTerm.toLowerCase())
         : true;
-
-      return matchCategory && matchSearch;
+      const price = product.salePrice ?? product.price ?? 0;
+      const matchMin = minPrice == null || price >= minPrice;
+      const matchMax = maxPrice == null || price <= maxPrice;
+      return matchCategory && matchSearch && matchMin && matchMax;
     });
-
     if (sortOrder === "asc") {
       filtered = [...filtered].sort(
         (a, b) => (a.salePrice ?? a.price) - (b.salePrice ?? b.price)
@@ -66,147 +38,155 @@ const ProductGrid = ({ category, searchTerm = "", sortOrder = "" }) => {
         (a, b) => (b.salePrice ?? b.price) - (a.salePrice ?? a.price)
       );
     }
+    return filtered;
+  }, [allProducts, category, searchTerm, sortOrder, minPrice, maxPrice]);
 
-    setVisibleProducts(filtered);
-  }, [allProducts, category, searchTerm, sortOrder]);
+  const productIds = useMemo(
+    () => visibleProducts.map((p) => p.firestoreId || p.id),
+    [visibleProducts]
+  );
+  const { data: ratingsMap = {} } = useProductRatings(productIds);
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 md:gap-x-6 gap-y-8 md:gap-y-10">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <ProductCardSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <>
-      {/* 🔴 UI BELOW IS 100% UNTOUCHED */}
-      <style>{`
-        .fade-in {
-          opacity: 0;
-          transform: translateY(20px);
-          animation-fill-mode: forwards;
-          animation-name: fadeInUp;
-          animation-duration: 0.6s;
-          animation-timing-function: ease-out;
-        }
-        @keyframes fadeInUp {
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .card-hover:hover {
-          transform: scale(1.04);
-          box-shadow: 0 10px 20px rgba(168, 85, 247, 0.3);
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
-          z-index: 10;
-          cursor: pointer;
-        }
-
-        .btn-view-details {
-          max-width: 140px;
-          margin: 0 auto;
-        }
-      `}</style>
-
-      <div className="row g-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 md:gap-x-6 gap-y-8 md:gap-y-10">
         {visibleProducts.map((prod, index) => (
-          <div
-            key={prod.id || prod.firestoreId || index}
-            className="col-md-4 col-sm-6 col-6 fade-in"
-            style={{ animationDelay: `${index * 0.1}s` }}
-          >
-            <div className="card border-0 shadow-sm h-100 d-flex flex-column overflow-hidden card-hover">
-              <Link
-                to={`/product/${prod.id}`}
-                className="text-decoration-none text-dark"
-              >
-                {/* <img
-                  src={prod.image}
-                  alt={prod.name}
-                  className="card-img-top"
-                  loading="lazy"
-                  style={{
-                    height: "250px",
-                    width: "100%",
-                    objectFit: "cover",
-                    objectPosition: "center",
-                    transition: "transform 0.3s ease",
-                    borderRadius: "0.25rem 0.25rem 0 0",
-                  }}
-                /> */}
-                <img
-  src={prod.image}
-  alt={prod.name}
-  className="card-img-top"
-  loading="lazy"
-  style={{
-    height: "250px",
-    width: "100%",
-    objectFit: "contain",   // 🔥 change yaha
-    backgroundColor: "#f8f8f8", // optional - white/grey background
-    borderRadius: "0.25rem 0.25rem 0 0",
-  }}
-/>
-              </Link>
-
-              <div className="card-body text-center p-4 d-flex flex-column justify-content-between">
-                <Link
-                  to={`/product/${prod.id}`}
-                  className="text-decoration-none text-dark fw-bold mb-2"
-                  style={{ fontSize: "1.1rem" }}
-                >
-                  {prod.name}
-                </Link>
-
-                {prod.salePrice ? (
-                  <p className="fw-semibold mb-3" style={{ fontSize: "1.25rem" }}>
-                    <span
-                      style={{
-                        textDecoration: "line-through",
-                        color: "gray",
-                        marginRight: "8px",
-                        fontSize: "1rem",
-                      }}
-                    >
-                      ₹{prod.price}
-                    </span>
-                    <span style={{ color: "red", fontWeight: "bold" }}>
-                      ₹{prod.salePrice}
-                    </span>
-                  </p>
-                ) : (
-                  <p
-                    className="fw-semibold mb-3"
-                    style={{
-                      color: "#110e14ff",
-                      fontSize: "1.25rem",
-                    }}
-                  >
-                    ₹{prod.price}
-                  </p>
-                )}
-
-                <Link
-                  to={`/product/${prod.id}`}
-                  className="btn btn-warning btn-sm mt-auto px-3 fw-semibold btn-view-details"
-                  style={{ transition: "background-color 0.3s ease" }}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.backgroundColor = "#e7f755ff")
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.backgroundColor = "")
-                  }
-                >
-                  View Details
-                </Link>
-              </div>
-            </div>
-          </div>
+          <ProductCard
+            key={prod.firestoreId || prod.id || index}
+            prod={prod}
+            index={index}
+            isInWishlist={isInWishlist(prod.firestoreId || prod.id)}
+            onToggleWishlist={toggleWishlist}
+            onQuickView={() => setQuickViewProduct(prod)}
+            rating={ratingsMap[prod.firestoreId || prod.id]}
+          />
         ))}
-
         {visibleProducts.length === 0 && (
-          <div className="text-center text-muted mt-4 fs-5">
+          <div className="col-span-full text-center text-neutral-mid py-12">
             No products found.
           </div>
         )}
       </div>
+      {quickViewProduct && (
+        <QuickViewModal product={quickViewProduct} onClose={() => setQuickViewProduct(null)} />
+      )}
     </>
   );
 };
+
+function ProductCard({ prod, index, isInWishlist, onToggleWishlist, onQuickView, rating }) {
+  const handleWishlist = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const result = await onToggleWishlist(prod, e);
+    if (!result?.success && result?.message) toast(result.message);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: Math.min(index * 0.03, 0.3), duration: 0.4 }}
+    >
+      <div className="relative card-modern bg-white border border-black/5 rounded-2xl overflow-hidden group h-full flex flex-col shadow-sm hover:shadow-xl hover:z-10">
+        <Link
+          to={`/product/${prod.firestoreId || prod.id}`}
+          className="block relative aspect-square bg-white overflow-hidden p-4"
+        >
+          <OptimizedImage
+            src={prod.image}
+            alt={prod.name}
+            width={520}
+            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 ease-out"
+            style={{ maxHeight: 260 }}
+          />
+          <button
+            type="button"
+            className={`absolute top-3 right-3 p-2.5 rounded-full shadow-sm transition-all duration-300 ${
+              isInWishlist
+                ? "bg-primary text-white hover:bg-primary-dark"
+                : "bg-white/90 text-neutral-mid hover:bg-primary hover:text-white"
+            }`}
+            onClick={handleWishlist}
+            aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+          >
+            <Heart size={16} className={isInWishlist ? "fill-current" : ""} />
+          </button>
+        </Link>
+
+        <div className="p-5 flex flex-col flex-1">
+            <Link
+              to={`/product/${prod.firestoreId || prod.id}`}
+              className="font-medium text-base text-[#2D2A32] hover:text-primary transition-colors line-clamp-3 mb-3 leading-snug min-h-[3.25rem]"
+            >
+            {prod.name}
+          </Link>
+
+          {(prod.stock === 0 || (prod.stock > 0 && prod.stock <= 5)) && (
+            <span className="text-xs font-semibold mb-1">
+              {prod.stock === 0 ? (
+                <span className="text-error">Out of stock</span>
+              ) : (
+                <span className="text-warning">Only {prod.stock} left</span>
+              )}
+            </span>
+          )}
+
+          {rating?.count > 0 && (
+            <div className="flex items-center gap-1 text-sm mb-1">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <span
+                  key={s}
+                  className={s <= Math.round(rating.avg) ? "text-accent" : "text-neutral-300"}
+                >
+                  ★
+                </span>
+              ))}
+              <span className="text-neutral-mid text-xs">({rating.count})</span>
+            </div>
+          )}
+          {prod.salePrice ? (
+            <p className="font-semibold text-primary mt-auto text-lg">
+              <span className="line-through text-neutral-mid text-sm mr-2">
+                ₹{prod.price}
+              </span>
+              ₹{prod.salePrice}
+            </p>
+          ) : (
+            <p className="font-semibold text-neutral-dark mt-auto text-lg">
+              ₹{prod.price}
+            </p>
+          )}
+
+          <div className="mt-4 flex gap-2">
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); onQuickView?.(); }}
+              className="flex-1 text-center border border-neutral-dark/30 text-neutral-dark rounded-xl py-3 text-xs font-semibold uppercase tracking-wider hover:bg-neutral-dark/5 transition-all"
+            >
+              <Eye size={14} className="inline mr-1" /> Quick View
+            </button>
+            <Link
+              to={`/product/${prod.firestoreId || prod.id}`}
+              className="flex-1 text-center border-2 border-neutral-dark text-neutral-dark rounded-xl py-3 text-xs font-semibold uppercase tracking-wider hover:bg-neutral-dark hover:text-white transition-all duration-200"
+            >
+              View Details
+            </Link>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 export default ProductGrid;

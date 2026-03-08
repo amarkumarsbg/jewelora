@@ -1,168 +1,3 @@
-// import { useState } from "react";
-// import { createUserWithEmailAndPassword } from "firebase/auth";
-// import { auth } from "../../firebase"; // Adjust this path to match your project
-// import { useNavigate } from "react-router-dom";
-
-// import { Link } from "react-router-dom";
-
-// const SignUp = () => {
-//   const [fullName, setFullName] = useState("");
-//   const [email, setEmail]     = useState("");
-//   const [password, setPassword] = useState("");
-//   const [error, setError]     = useState("");
-//   const navigate = useNavigate();
-
-//   const handleSignUp = async (e) => {
-//     e.preventDefault();
-//     setError("");
-
-//     try {
-//       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-//       const user = userCredential.user;
-
-//       console.log("User created:", user);
-//       // Optionally store fullName in Firestore or local state
-//       navigate("/"); // Redirect to homepage after signup
-//     } catch (err) {
-//       setError(err.message);
-//     }
-//   };
-
-//   return (
-//     <section className="d-flex justify-content-center py-5 bg-light">
-//       <div className="card shadow p-5" style={{ width: "100%", maxWidth: "500px" }}>
-//         <h2 className="text-center text-warning fw-bold mb-3">Create Account</h2>
-
-//         <form onSubmit={handleSignUp}>
-//           <div className="mb-3">
-//             <label className="form-label">Full Name</label>
-//             <input type="text" className="form-control" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-//           </div>
-
-//           <div className="mb-3">
-//             <label className="form-label">Email address</label>
-//             <input type="email" className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} />
-//           </div>
-
-//           <div className="mb-3">
-//             <label className="form-label">Password</label>
-//             <input type="password" className="form-control" value={password} onChange={(e) => setPassword(e.target.value)} />
-//           </div>
-
-//           {error && <div className="alert alert-danger">{error}</div>}
-
-//           <button type="submit" className="btn btn-warning w-100 text-white fw-semibold">
-//             Sign Up
-//           </button>
-//         </form>
-
-//         <p className="text-center mt-3">
-//           Already have an account?{" "}
-//           <Link to="/signin" className="text-decoration-none text-warning fw-semibold">
-//             Sign In
-//           </Link>
-//         </p>
-//       </div>
-//     </section>
-//   );
-// };
-
-
-// export default SignUp;
-
-// import { useState } from "react";
-// import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-// import { auth } from "../../firebase";
-// import { useNavigate, Link } from "react-router-dom";
-
-// const SignUp = () => {
-//   const [fullName, setFullName] = useState("");
-//   const [email, setEmail] = useState("");
-//   const [password, setPassword] = useState("");
-//   const [error, setError] = useState("");
-//   const navigate = useNavigate();
-
-//   const handleSignUp = async (e) => {
-//     e.preventDefault();
-//     setError("");
-
-//     try {
-//       // Create user
-//       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-//       const user = userCredential.user;
-
-//       // Save fullname in Firebase Auth displayName
-//       await updateProfile(user, {
-//         displayName: fullName
-//       });
-
-//       console.log("User created:", user);
-//       navigate("/"); // Redirect to homepage
-//     } catch (err) {
-//       setError(err.message);
-//     }
-//   };
-
-//   return (
-//     <section className="d-flex justify-content-center py-5 bg-light">
-//       <div className="card shadow p-5" style={{ width: "100%", maxWidth: "500px" }}>
-//         <h2 className="text-center text-warning fw-bold mb-3">Create Account</h2>
-
-//         <form onSubmit={handleSignUp}>
-//           <div className="mb-3">
-//             <label className="form-label">Full Name</label>
-//             <input
-//               type="text"
-//               className="form-control"
-//               value={fullName}
-//               onChange={(e) => setFullName(e.target.value)}
-//               required
-//             />
-//           </div>
-
-//           <div className="mb-3">
-//             <label className="form-label">Email address</label>
-//             <input
-//               type="email"
-//               className="form-control"
-//               value={email}
-//               onChange={(e) => setEmail(e.target.value)}
-//               required
-//             />
-//           </div>
-
-//           <div className="mb-3">
-//             <label className="form-label">Password</label>
-//             <input
-//               type="password"
-//               className="form-control"
-//               value={password}
-//               onChange={(e) => setPassword(e.target.value)}
-//               required
-//             />
-//           </div>
-
-//           {error && <div className="alert alert-danger">{error}</div>}
-
-//           <button type="submit" className="btn btn-warning w-100 text-white fw-semibold">
-//             Sign Up
-//           </button>
-//         </form>
-
-//         <p className="text-center mt-3">
-//           Already have an account?{" "}
-//           <Link to="/signin" className="text-decoration-none text-warning fw-semibold">
-//             Sign In
-//           </Link>
-//         </p>
-//       </div>
-//     </section>
-//   );
-// };
-
-// export default SignUp;
-
-
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "../../firebase";
 import { useAuth } from "../../context/AuthContext";
@@ -175,7 +10,7 @@ const SignUp = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { updateAuthUser } = useAuth(); // ✅ get from context
+  const { updateAuthUser } = useAuth();
 
   const handleSignUp = async (e) => {
     e.preventDefault();
@@ -186,8 +21,6 @@ const SignUp = () => {
       const user = userCredential.user;
 
       await updateProfile(user, { displayName: fullName });
-
-      // ✅ Instantly update AuthContext without reload
       updateAuthUser({ displayName: fullName });
 
       navigate("/");
@@ -197,61 +30,66 @@ const SignUp = () => {
   };
 
   return (
-    /* your form JSX here */
-     <section className="d-flex justify-content-center py-5 bg-light">
-      <div className="card shadow p-5" style={{ width: "100%", maxWidth: "500px" }}>
-        <h2 className="text-center text-warning fw-bold mb-3">Create Account</h2>
+    <section className="flex justify-center items-center py-16 bg-cream min-h-[60vh]">
+      <div className="w-full max-w-md bg-white rounded-lg border border-border p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <h2 className="text-center font-heading text-2xl font-semibold text-neutral-dark mb-6">
+          Create Account
+        </h2>
 
         <form onSubmit={handleSignUp}>
-          <div className="mb-3">
-            <label className="form-label">Full Name</label>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-neutral-dark mb-2">Full Name</label>
             <input
               type="text"
-              className="form-control"
+              className="w-full rounded-sm border border-input bg-white px-4 py-3 text-sm placeholder:text-neutral-mid/50 focus:border-primary focus:shadow-[0_0_0_3px_rgba(232,160,191,0.1)] focus:outline-none transition-all"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               required
             />
           </div>
 
-          <div className="mb-3">
-            <label className="form-label">Email address</label>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-neutral-dark mb-2">Email address</label>
             <input
               type="email"
-              className="form-control"
+              className="w-full rounded-sm border border-input bg-white px-4 py-3 text-sm placeholder:text-neutral-mid/50 focus:border-primary focus:shadow-[0_0_0_3px_rgba(232,160,191,0.1)] focus:outline-none transition-all"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
 
-          <div className="mb-3">
-            <label className="form-label">Password</label>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-neutral-dark mb-2">Password</label>
             <input
               type="password"
-              className="form-control"
+              className="w-full rounded-sm border border-input bg-white px-4 py-3 text-sm placeholder:text-neutral-mid/50 focus:border-primary focus:shadow-[0_0_0_3px_rgba(232,160,191,0.1)] focus:outline-none transition-all"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
 
-          {error && <div className="alert alert-danger">{error}</div>}
+          {error && (
+            <div className="mb-4 p-3 rounded-sm bg-error/10 text-error text-sm">{error}</div>
+          )}
 
-          <button type="submit" className="btn btn-warning w-100 text-white fw-semibold">
+          <button
+            type="submit"
+            className="w-full bg-primary text-white rounded-full py-3 font-semibold hover:bg-primary-dark transition-colors"
+          >
             Sign Up
           </button>
         </form>
 
-        <p className="text-center mt-3">
+        <p className="text-center mt-6 text-sm text-neutral-mid">
           Already have an account?{" "}
-          <Link to="/signin" className="text-decoration-none text-warning fw-semibold">
+          <Link to="/signin" className="text-primary font-semibold hover:text-primary-dark">
             Sign In
           </Link>
         </p>
       </div>
     </section>
-  
   );
 };
 

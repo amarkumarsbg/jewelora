@@ -8,7 +8,8 @@ import { collectionGroup, getDocs, updateDoc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import ReceiptInvoice from "../components/ReceiptInvoice";
-import emailjs from "emailjs-com";
+import emailjs from "@emailjs/browser";
+import toast from "react-hot-toast";
 
 const AdminOrders = () => {
   const { currentUser } = useAuth();
@@ -25,6 +26,7 @@ const AdminOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [trackingLink, setTrackingLink] = useState("");
   const [trackingMessage, setTrackingMessage] = useState("");
+  const [selectedIds, setSelectedIds] = useState(new Set());
 
   // 🔄 FETCH ALL ORDERS
   useEffect(() => {
@@ -54,6 +56,53 @@ const AdminOrders = () => {
     fetchAllOrders();
   }, [currentUser, isAdmin, navigate]);
 
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === orders.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(orders.map((o) => o.id)));
+    }
+  };
+
+  const handleBulkStatusUpdate = async (newStatus) => {
+    const toUpdate = orders.filter((o) => selectedIds.has(o.id));
+    for (const order of toUpdate) {
+      await handleStatusChange(order, newStatus);
+    }
+    setSelectedIds(new Set());
+  };
+
+  const handleExportSelected = () => {
+    const toExport = orders.filter((o) => selectedIds.has(o.id));
+    const csv = [
+      ["Order ID", "Date", "Customer", "Total", "Status"].join(","),
+      ...toExport.map((o) =>
+        [
+          o.id,
+          o.createdAt?.seconds ? new Date(o.createdAt.seconds * 1000).toLocaleString() : "",
+          o.shippingInfo?.fullName || "",
+          o.total || "",
+          o.status || "",
+        ].join(",")
+      ),
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `orders_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   // 🔁 NORMAL STATUS UPDATE
   const handleStatusChange = async (order, newStatus) => {
     await updateDoc(order.ref, { status: newStatus });
@@ -68,7 +117,7 @@ const AdminOrders = () => {
   // ✅ CONFIRM SHIPMENT (WITH TRACKING + EMAIL)
   const confirmShipment = async () => {
     if (!trackingLink || !trackingMessage) {
-      alert("Please enter tracking link and message");
+      toast.error("Please enter tracking link and message");
       return;
     }
 
@@ -96,14 +145,14 @@ const AdminOrders = () => {
       "service_pauibc6",
       "template_gfzrqmg",
       {
-        to_email: selectedOrder.shippingInfo.email,
-        customer_name: selectedOrder.shippingInfo.fullName,
+        to_email: selectedOrder.shippingInfo?.email,
+        customer_name: selectedOrder.shippingInfo?.fullName,
         order_id: selectedOrder.id,
         order_status: "Shipped",
         tracking_message: trackingMessage,
         tracking_link: trackingLink,
       },
-      "AL9Hdy7gl6JXUpK5z"
+      { publicKey: "AL9Hdy7gl6JXUpK5z" }
     );
 
     // RESET
@@ -119,11 +168,53 @@ const AdminOrders = () => {
         Admin Panel: All Orders
       </h2>
 
+      {/* Bulk actions */}
+      {orders.length > 0 && (
+        <div className="d-flex flex-wrap align-items-center gap-2 mb-4">
+          <label className="d-flex align-items-center gap-2">
+            <input
+              type="checkbox"
+              checked={selectedIds.size === orders.length}
+              onChange={toggleSelectAll}
+            />
+            Select all
+          </label>
+          {selectedIds.size > 0 && (
+            <>
+              <button
+                className="btn btn-sm btn-outline-primary"
+                onClick={() => handleBulkStatusUpdate("shipped")}
+              >
+                Mark {selectedIds.size} as Shipped
+              </button>
+              <button
+                className="btn btn-sm btn-outline-success"
+                onClick={() => handleBulkStatusUpdate("delivered")}
+              >
+                Mark {selectedIds.size} as Delivered
+              </button>
+              <button
+                className="btn btn-sm btn-outline-secondary"
+                onClick={handleExportSelected}
+              >
+                Export selected
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       {orders.map((order) => (
         <div key={order.id} className="card mb-5 shadow border-0 p-4">
           {/* HEADER */}
           <div className="d-flex justify-content-between flex-wrap">
-            <div>
+            <div className="d-flex align-items-start gap-3">
+              <input
+                type="checkbox"
+                checked={selectedIds.has(order.id)}
+                onChange={() => toggleSelect(order.id)}
+              />
+              <div>
               <h5 className="fw-bold">Order ID: {order.id}</h5>
 
               <p className="mb-0">
@@ -173,6 +264,7 @@ const AdminOrders = () => {
                   {order.razorpayPaymentId}
                 </p>
               )}
+              </div>
             </div>
 
             {/* STATUS DROPDOWN */}

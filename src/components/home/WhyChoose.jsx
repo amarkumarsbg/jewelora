@@ -1,21 +1,20 @@
-
-
 import React from "react";
 import { ShieldCheck, Gem, Truck } from "lucide-react";
+import { motion } from "framer-motion";
 
 const features = [
   {
-    icon: <Gem size={40} className="text-warning" />,
+    icon: Gem,
     title: "Premium Quality",
     description: "Crafted with the finest materials for long-lasting beauty.",
   },
   {
-    icon: <ShieldCheck size={40} className="text-warning" />,
+    icon: ShieldCheck,
     title: "Authenticity Guaranteed",
     description: "Every piece is certified and 100% genuine.",
   },
   {
-    icon: <Truck size={40} className="text-warning" />,
+    icon: Truck,
     title: "Fast & Free Delivery",
     description: "Get your orders quickly with our free express shipping.",
   },
@@ -23,53 +22,40 @@ const features = [
 
 const WhyChooseUs = () => {
   return (
-    <section className="py-5" style={{ backgroundColor: "#fffaf3" }}>
-      <div className="container text-center">
-        <h2
-          className="fw-bold mb-3"
-          style={{
-            color: "#b8860b",
-            fontFamily: "'Playfair Display', serif",
-            fontSize: "2rem",
-          }}
+    <section className="py-16 bg-linen">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-12"
         >
-          Why Choose Jewelora?
-        </h2>
-        <p className="mb-5 text-muted" style={{ fontSize: "1.05rem" }}>
-          Experience elegance, quality, and trust with every purchase.
-        </p>
-        <div className="row">
+          <h2 className="font-heading text-3xl md:text-4xl font-medium text-neutral-dark mb-3">
+            Why Choose Jewelora?
+          </h2>
+          <p className="text-neutral-mid" style={{ fontSize: "1.05rem" }}>
+            Experience elegance, quality, and trust with every purchase.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {features.map((item, index) => (
-            <div className="col-md-4 mb-4" key={index}>
-              <div
-                className="p-4 h-100 shadow-sm bg-white rounded"
-                style={{
-                  borderRadius: "15px",
-                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-8px)";
-                  e.currentTarget.style.boxShadow =
-                    "0 10px 25px rgba(0,0,0,0.15)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow =
-                    "0 4px 15px rgba(0,0,0,0.08)";
-                }}
-              >
-                <div className="mb-3">{item.icon}</div>
-                <h5
-                  className="fw-semibold mb-2"
-                  style={{ color: "#333", fontSize: "1.15rem" }}
-                >
-                  {item.title}
-                </h5>
-                <p className="text-muted" style={{ fontSize: "0.95rem" }}>
-                  {item.description}
-                </p>
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.1 }}
+              className="card-modern bg-white border border-black/5 rounded-2xl p-10 text-center"
+            >
+              <div className="flex justify-center mb-4">
+                <item.icon size={40} className="text-primary" />
               </div>
-            </div>
+              <h5 className="font-heading font-semibold text-lg text-neutral-dark mb-2">
+                {item.title}
+              </h5>
+              <p className="text-neutral-mid text-sm">{item.description}</p>
+            </motion.div>
           ))}
         </div>
       </div>

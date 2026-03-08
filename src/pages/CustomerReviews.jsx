@@ -1,111 +1,128 @@
-
-
-
 import { useEffect, useState } from "react";
 import { db } from "../firebase";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { collection, getDocs, orderBy, query, limit } from "firebase/firestore";
+import { Star } from "lucide-react";
+import { motion } from "framer-motion";
 
 const CustomerReviews = () => {
   const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchReviews = async () => {
-      const q = query(collection(db, "reviews"), orderBy("createdAt", "desc"));
-      const snap = await getDocs(q);
-      setReviews(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      try {
+        const q = query(
+          collection(db, "reviews"),
+          orderBy("createdAt", "desc"),
+          limit(50)
+        );
+        const snap = await getDocs(q);
+        setReviews(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      } finally {
+        setLoading(false);
+      }
     };
     fetchReviews();
   }, []);
 
+  const formatDate = (ts) => {
+    if (!ts) return "";
+    try {
+      const date = typeof ts.toDate === "function" ? ts.toDate() : new Date(ts);
+      return isNaN(date.getTime()) ? "" : date.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return "";
+    }
+  };
+
   return (
-    <div className="container py-5">
-      <h2 className="text-center text-warning fw-bold mb-5">
-        ⭐ Customer Reviews
-      </h2>
+    <div className="min-h-screen bg-linen">
+      {/* Header */}
+      <div className="bg-primary py-8 md:py-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="font-heading text-3xl md:text-4xl font-medium !text-white">
+            Customer Reviews
+          </h1>
+          <p className="mt-2 text-white/80 text-sm md:text-base">
+            What our customers say about us
+          </p>
+        </div>
+      </div>
 
-      {reviews.length === 0 ? (
-        <p className="text-center text-muted">No reviews yet.</p>
-      ) : (
-        <div className="row g-4">
-          {reviews.map((review) => (
-            <div key={review.id} className="col-md-6">
-              <div className="card border-0 shadow-lg h-100 rounded-4">
-                <div className="card-body p-4 d-flex flex-column">
-                  {/* Top section: Letter avatar + name + stars */}
-                  <div className="d-flex align-items-center mb-3">
-                    <div
-                      className="rounded-circle bg-warning text-white d-flex justify-content-center align-items-center me-3"
-                      style={{
-                        width: "45px",
-                        height: "45px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {review.customerName?.charAt(0).toUpperCase()}
-                    </div>
-
-                    <div>
-                      <h6 className="fw-semibold mb-0">
-                         {review.customerName }
-                      </h6>
-                      <div>
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <span
-                            key={star}
-                            style={{
-                              color:
-                                star <= review.rating ? "#FFD700" : "#e0e0e0",
-                              fontSize: "1rem",
-                            }}
-                          >
-                            ★
-                          </span>
-                        ))}
-                      </div>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : reviews.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-2xl border border-black/5 shadow-sm">
+            <Star size={48} className="mx-auto text-neutral-mid/50 mb-4" />
+            <h2 className="font-heading text-xl font-semibold text-neutral-dark mb-2">
+              No reviews yet
+            </h2>
+            <p className="text-neutral-mid text-sm">
+              Be the first to share your experience with Jewelora
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {reviews.map((review, idx) => (
+              <motion.div
+                key={review.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: idx * 0.05 }}
+                className="bg-white rounded-2xl border border-black/5 shadow-sm p-6 flex flex-col h-full"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-11 h-11 rounded-full bg-secondary/20 text-secondary flex items-center justify-center font-semibold shrink-0">
+                    {review.customerName?.charAt(0).toUpperCase() || "?"}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-neutral-dark">
+                      {review.customerName}
+                    </p>
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          size={14}
+                          className={
+                            star <= (review.rating || 0)
+                              ? "fill-secondary text-secondary"
+                              : "text-neutral-mid/30"
+                          }
+                        />
+                      ))}
                     </div>
                   </div>
-
-                  {/* Review Text */}
-                  <p className="text-secondary flex-grow-1">
-                    {review.description}
-                  </p>
-
-                  {/* Product Image (if uploaded by user) */}
-                  {review.photoUrl && (
-                    <div className="overflow-hidden rounded-3 mb-3">
-                      <img
-                        src={review.photoUrl}
-                        alt="Customer Review"
-                        className="img-fluid w-100"
-                        style={{
-                          maxHeight: "220px",
-                          objectFit: "cover",
-                          transition: "0.3s ease",
-                        }}
-                        onMouseOver={(e) =>
-                          (e.currentTarget.style.transform = "scale(1.05)")
-                        }
-                        onMouseOut={(e) =>
-                          (e.currentTarget.style.transform = "scale(1)")
-                        }
-                      />
-                    </div>
-                  )}
-
-                  {/* Footer Meta */}
-                  <small className="text-muted mt-auto">
-                    {review.createdAt?.toDate().toLocaleString()}
-                  </small>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+                <p className="text-neutral-dark text-sm flex-grow">
+                  {review.description}
+                </p>
+                {review.photoUrl && (
+                  <div className="mt-4 overflow-hidden rounded-xl">
+                    <img
+                      src={review.photoUrl}
+                      alt="Customer review"
+                      className="w-full object-cover max-h-52 hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                )}
+                <p className="text-neutral-mid text-xs mt-4">
+                  {formatDate(review.createdAt)}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
 export default CustomerReviews;
-
-

@@ -2,14 +2,13 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebase"; // Adjust path if needed
+import { auth } from "../../firebase";
 import { useNavigate } from "react-router-dom";
 
-
 const SignIn = () => {
-  const [email, setEmail]       = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError]       = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSignIn = async (e) => {
@@ -17,54 +16,64 @@ const SignIn = () => {
     setError("");
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      console.log("User signed in:", user);
-      navigate("/"); // Redirect to home or dashboard
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate("/");
     } catch (err) {
       setError("Invalid email or password");
     }
   };
 
   return (
-    <section className="d-flex justify-content-center py-5 bg-light">
-      <div className="card shadow p-4" style={{ width: "100%", maxWidth: "400px" }}>
-        <h2 className="text-center text-warning fw-bold mb-3">Welcome Back</h2>
+    <section className="flex justify-center items-center py-16 bg-cream min-h-[60vh]">
+      <div className="w-full max-w-md bg-white rounded-lg border border-border p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <h2 className="text-center font-heading text-2xl font-semibold text-neutral-dark mb-6">
+          Welcome Back
+        </h2>
 
         <form onSubmit={handleSignIn}>
-          <div className="mb-3">
-            <label className="form-label">Email address</label>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-neutral-dark mb-2">
+              Email address
+            </label>
             <input
               type="email"
-              className="form-control"
+              className="w-full rounded-sm border border-input bg-white px-4 py-3 text-sm placeholder:text-neutral-mid/50 focus:border-primary focus:shadow-[0_0_0_3px_rgba(232,160,191,0.1)] focus:outline-none transition-all"
               placeholder="example@gmail.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
-          <div className="mb-3">
-            <label className="form-label">Password</label>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-neutral-dark mb-2">
+              Password
+            </label>
             <input
               type="password"
-              className="form-control"
+              className="w-full rounded-sm border border-input bg-white px-4 py-3 text-sm placeholder:text-neutral-mid/50 focus:border-primary focus:shadow-[0_0_0_3px_rgba(232,160,191,0.1)] focus:outline-none transition-all"
               placeholder="********"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
 
-          {error && <div className="alert alert-danger">{error}</div>}
+          {error && (
+            <div className="mb-4 p-3 rounded-sm bg-error/10 text-error text-sm">
+              {error}
+            </div>
+          )}
 
-          <button type="submit" className="btn btn-warning w-100 text-white fw-semibold">
+          <button
+            type="submit"
+            className="w-full bg-primary text-white rounded-full py-3 font-semibold hover:bg-primary-dark transition-colors"
+          >
             Sign In
           </button>
         </form>
 
-        <p className="text-center mt-3">
-          Don’t have an account?{" "}
-          <Link to="/signup" className="text-decoration-none text-warning fw-semibold">
+        <p className="text-center mt-6 text-sm text-neutral-mid">
+          Don&apos;t have an account?{" "}
+          <Link to="/signup" className="text-primary font-semibold hover:text-primary-dark">
             Sign Up
           </Link>
         </p>
@@ -72,6 +81,5 @@ const SignIn = () => {
     </section>
   );
 };
-
 
 export default SignIn;

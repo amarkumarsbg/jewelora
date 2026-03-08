@@ -15,7 +15,9 @@ import {
 } from "firebase/firestore";
 import emailjs from "@emailjs/browser";
 
-import { FaShippingFast, FaCreditCard } from "react-icons/fa";
+import { Truck, CreditCard, LogIn } from "lucide-react";
+import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 
 // Coupons
 const coupons = [
@@ -56,6 +58,10 @@ const Checkout = () => {
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
 
+  // Order notes & payment method
+  const [orderNotes, setOrderNotes] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("Razorpay"); // "Razorpay" | "COD"
+
   // Estimated delivery
   const today = new Date();
   const deliveryStart = new Date(today);
@@ -77,9 +83,10 @@ const Checkout = () => {
     if (buyNowProduct) {
       setCartItems([{ ...buyNowProduct, quantity: 1 }]);
       setLoading(false);
+    } else if (!currentUser) {
+      setLoading(false);
     } else {
       const fetchCart = async () => {
-        if (!currentUser) return;
         const snapshot = await getDocs(
           collection(db, "carts", currentUser.uid, "items")
         );
@@ -139,12 +146,17 @@ const Checkout = () => {
   };
 
   // =====================
-  // PLACE ORDER (PREPAID)
+  // PLACE ORDER (PREPAID or COD)
   // =====================
   const handlePlaceOrderClick = async () => {
-    if (!currentUser) return alert("Please sign in to place an order.");
-    if (!fullName || !phone || !address || !pincode || !city || !state)
-      return alert("Please fill all required fields.");
+    if (!currentUser) {
+      toast("Please sign in to place an order.");
+      return;
+    }
+    if (!fullName || !phone || !address || !pincode || !city || !state) {
+      toast("Please fill all required fields.");
+      return;
+    }
 
     try {
       setPlacingOrder(true);
@@ -165,7 +177,9 @@ const Checkout = () => {
         });
       }
 
-      // ✅ CREATE ORDER FIRST (OLD WORKING LOGIC)
+      const isCOD = paymentMethod === "COD";
+
+      // ✅ CREATE ORDER FIRST
       const orderRef = await addDoc(
         collection(db, "orders", currentUser.uid, "orders"),
         {
@@ -173,9 +187,9 @@ const Checkout = () => {
           items: cartItems,
           total,
           shipping,
-          paymentMethod: "Razorpay",
-          paymentStatus: "pending",
-          status: "payment_pending",
+          paymentMethod: isCOD ? "COD" : "Razorpay",
+          paymentStatus: isCOD ? "pending" : "pending",
+          status: isCOD ? "confirmed" : "payment_pending",
           shippingInfo: {
             fullName,
             email,
@@ -185,11 +199,60 @@ const Checkout = () => {
             city,
             state,
           },
+          orderNotes: orderNotes || null,
+          estimatedDelivery,
           createdAt: new Date(),
         }
       );
 
-      // Create Razorpay order
+      // COD: Skip payment, complete order
+      if (isCOD) {
+        if (!buyNowProduct) {
+          const cartRef = collection(db, "carts", currentUser.uid, "items");
+          const snapshot = await getDocs(cartRef);
+          await Promise.all(
+            snapshot.docs.map((d) =>
+              deleteDoc(doc(db, "carts", currentUser.uid, "items", d.id))
+            )
+          );
+        }
+        emailjs.send(
+          "service_pauibc6",
+          "template_n32ehvb",
+          {
+            customer_name: fullName,
+            customer_email: email,
+            order_id: orderRef.id,
+            order_total: total,
+            payment_method: "Cash on Delivery",
+            order_items: cartItems
+              .map((item) => `${item.name} × ${item.quantity || 1}`)
+              .join(", "),
+            address: `${address}, ${city}, ${state} - ${pincode}`,
+          },
+          "AL9Hdy7gl6JXUpK5z"
+        ).catch(() => { /* Email notification failed */ });
+        setShowLoader(false);
+        setPlacingOrder(false);
+        navigate("/order-confirmation", {
+          state: {
+            orderId: orderRef.id,
+            total,
+            paymentStatus: "pending",
+            fullName,
+            email,
+            phone,
+            address,
+            city,
+            state,
+            pincode,
+            paymentMethod: "COD",
+          },
+        });
+        return;
+      }
+
+      // Create Razorpay order (prepaid)
       const response = await fetch(
         "https://jewelorabackend.onrender.com/create-razorpay-order",
         {
@@ -265,11 +328,8 @@ emailjs.send(
   },
   "AL9Hdy7gl6JXUpK5z"           // EmailJS public key
 )
-.then(() => {
-  console.log("Order email sent successfully");
-})
-.catch((err) => {
-  console.error("Email send failed:", err);
+.catch(() => {
+  /* Email notification failed - order still placed */
 });
 
             setShowLoader(false);
@@ -293,7 +353,7 @@ emailjs.send(
           } catch {
             setShowLoader(false);
             setPlacingOrder(false);
-            alert("Payment verification failed");
+            toast.error("Payment verification failed");
           }
         },
 
@@ -309,61 +369,123 @@ emailjs.send(
     } catch {
       setShowLoader(false);
       setPlacingOrder(false);
-      alert("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     }
   };
 
   if (loading) return <div className="text-center py-5">Loading...</div>;
 
-  
+  // Sign-in gate for guests
+  if (!currentUser) {
+    return (
+      <section className="min-h-[60vh] bg-cream flex items-center justify-center py-16">
+        <div className="mx-auto max-w-lg px-4">
+          <div className="bg-white rounded-2xl border border-black/5 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] p-8 text-center">
+            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+              <LogIn className="text-primary" size={40} />
+            </div>
+            <h2 className="font-heading text-2xl md:text-3xl font-medium text-neutral-dark mb-3">
+              Sign in to checkout
+            </h2>
+            <p className="text-neutral-mid mb-8 max-w-sm mx-auto">
+              Sign in to complete your order and proceed to secure payment.
+            </p>
+            <Link
+              to="/signin"
+              className="inline-flex items-center justify-center gap-2 bg-primary text-white rounded-full px-8 py-3.5 font-semibold hover:bg-primary-dark transition-colors"
+            >
+              <LogIn size={20} />
+              Sign In
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
   <>
     {showLoader && (
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(255,255,255,0.85)",
-          zIndex: 9999,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <div className="spinner-border text-warning mb-3" />
+      <div className="fixed inset-0 bg-white/90 z-[9999] flex flex-col justify-center items-center">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
         <strong>{loaderText}</strong>
         <small>Please don’t refresh or close this page</small>
       </div>
     )}
 
-    <div className="container py-5">
-      <h2 className="mb-4 text-center text-warning fw-bold">Checkout</h2>
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      <h2 className="mb-8 text-center font-heading text-3xl font-medium text-neutral-dark">Checkout</h2>
 
-      <div className="row g-4">
+      {/* Progress steps */}
+      <div className="flex items-center justify-center gap-4 mb-10">
+        {[
+          { step: 1, label: "Cart", done: true },
+          { step: 2, label: "Shipping", done: true },
+          { step: 3, label: "Payment", done: false },
+        ].map(({ step, label, done }, i) => (
+          <div key={step} className="flex items-center">
+            <div className="flex items-center gap-2">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                  step < 3 || placingOrder ? "bg-primary text-white" : "bg-neutral-200 text-neutral-mid"
+                }`}
+              >
+                {step < 3 ? "✓" : step}
+              </div>
+              <span className="text-sm font-medium text-neutral-dark hidden sm:inline">{label}</span>
+            </div>
+            {i < 2 && <div className="w-12 h-0.5 bg-primary/30 mx-2" />}
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Shipping */}
-        <div className="col-md-7">
-          <div className="card shadow-sm border-0 p-4">
-            <h5 className="mb-4 fw-bold text-primary d-flex align-items-center">
-              <FaShippingFast className="me-2" />
+        <div className="lg:col-span-7">
+          <div className="bg-white border border-border rounded-lg p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+            <h5 className="mb-6 font-semibold text-primary flex items-center gap-2">
+              <Truck size={20} />
               Shipping Information
             </h5>
 
-            {/* ✅ PREPAID ONLY MESSAGE */}
-            <div className="alert alert-warning py-2 mb-4">
-              <strong>Payment Method:</strong> Prepaid only (Online payment
-              required)
+            {/* Payment method selector */}
+            <div className="mb-6">
+              <label className="block font-semibold text-neutral-dark mb-2">Payment Method</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="Razorpay"
+                    checked={paymentMethod === "Razorpay"}
+                    onChange={() => setPaymentMethod("Razorpay")}
+                    className="w-4 h-4 text-primary"
+                  />
+                  <span>Online Payment (Razorpay)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="COD"
+                    checked={paymentMethod === "COD"}
+                    onChange={() => setPaymentMethod("COD")}
+                    className="w-4 h-4 text-primary"
+                  />
+                  <span>Cash on Delivery</span>
+                </label>
+              </div>
             </div>
 
             {loadingAddresses ? (
               <p>Loading saved addresses...</p>
             ) : savedAddresses.length > 0 ? (
-              <div className="mb-3">
-                <label className="form-label fw-semibold">
+              <div className="mb-6">
+                <label className="block font-semibold text-neutral-dark mb-2">
                   Select Saved Address
                 </label>
                 <select
-                  className="form-select"
+                  className="w-full rounded-sm border border-input bg-white px-4 py-3 text-sm focus:border-primary focus:outline-none transition-all"
                   onChange={(e) => {
                     const selected = savedAddresses.find(
                       (a) => a.id === e.target.value
@@ -386,81 +508,94 @@ emailjs.send(
             ) : null}
 
             {/* 🔒 DISABLE FORM DURING PAYMENT */}
-            <fieldset disabled={placingOrder || showLoader}>
-              <div className="row g-3">
-                <div className="col-md-6">
-                  <label className="form-label">Full Name *</label>
+            <fieldset disabled={placingOrder || showLoader} className="border-0 p-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-dark mb-2">Full Name *</label>
                   <input
-                    className="form-control"
+                    className="w-full rounded-sm border border-input bg-white px-4 py-3 text-sm focus:border-primary focus:shadow-[0_0_0_3px_rgba(232,160,191,0.1)] focus:outline-none transition-all disabled:opacity-60"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                   />
                 </div>
 
-                <div className="col-md-6">
-                  <label className="form-label">Email</label>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-dark mb-2">Email</label>
                   <input
-                    className="form-control"
+                    className="w-full rounded-sm border border-input bg-white px-4 py-3 text-sm focus:border-primary focus:shadow-[0_0_0_3px_rgba(232,160,191,0.1)] focus:outline-none transition-all disabled:opacity-60"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
 
-                <div className="col-md-6">
-                  <label className="form-label">Phone *</label>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-dark mb-2">Phone *</label>
                   <input
-                    className="form-control"
+                    className="w-full rounded-sm border border-input bg-white px-4 py-3 text-sm focus:border-primary focus:shadow-[0_0_0_3px_rgba(232,160,191,0.1)] focus:outline-none transition-all disabled:opacity-60"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                   />
                 </div>
 
-                <div className="col-12">
-                  <label className="form-label">Address *</label>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-neutral-dark mb-2">Address *</label>
                   <input
-                    className="form-control"
+                    className="w-full rounded-sm border border-input bg-white px-4 py-3 text-sm focus:border-primary focus:shadow-[0_0_0_3px_rgba(232,160,191,0.1)] focus:outline-none transition-all disabled:opacity-60"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                   />
                 </div>
 
-                <div className="col-md-6">
-                  <label className="form-label">Pincode *</label>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-dark mb-2">Pincode *</label>
                   <input
-                    className="form-control"
+                    className="w-full rounded-sm border border-input bg-white px-4 py-3 text-sm focus:border-primary focus:shadow-[0_0_0_3px_rgba(232,160,191,0.1)] focus:outline-none transition-all disabled:opacity-60"
                     value={pincode}
                     onChange={(e) => setPincode(e.target.value)}
                   />
                 </div>
 
-                <div className="col-md-6">
-                  <label className="form-label">City *</label>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-dark mb-2">City *</label>
                   <input
-                    className="form-control"
+                    className="w-full rounded-sm border border-input bg-white px-4 py-3 text-sm focus:border-primary focus:shadow-[0_0_0_3px_rgba(232,160,191,0.1)] focus:outline-none transition-all disabled:opacity-60"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                   />
                 </div>
 
-                <div className="col-md-6">
-                  <label className="form-label">State *</label>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-dark mb-2">State *</label>
                   <input
-                    className="form-control"
+                    className="w-full rounded-sm border border-input bg-white px-4 py-3 text-sm focus:border-primary focus:shadow-[0_0_0_3px_rgba(232,160,191,0.1)] focus:outline-none transition-all disabled:opacity-60"
                     value={state}
                     onChange={(e) => setState(e.target.value)}
                   />
                 </div>
 
-                <div className="col-12 form-check mt-3">
+                <div className="md:col-span-2 flex items-center gap-2 mt-4">
                   <input
                     type="checkbox"
-                    className="form-check-input"
+                    id="saveAddress"
+                    className="w-4 h-4 rounded border-input text-primary focus:ring-primary"
                     checked={saveAddress}
                     onChange={() => setSaveAddress(!saveAddress)}
                   />
-                  <label className="form-check-label">
+                  <label htmlFor="saveAddress" className="text-sm text-neutral-dark">
                     Save this address for future use
                   </label>
+                </div>
+
+                <div className="md:col-span-2 mt-4">
+                  <label className="block text-sm font-medium text-neutral-dark mb-2">Order Notes (optional)</label>
+                  <textarea
+                    className="w-full rounded-sm border border-input bg-white px-4 py-3 text-sm placeholder:text-neutral-mid/50 focus:border-primary focus:outline-none transition-all disabled:opacity-60"
+                    rows={3}
+                    placeholder="Gift wrap, message for recipient, special instructions..."
+                    value={orderNotes}
+                    onChange={(e) => setOrderNotes(e.target.value)}
+                    disabled={placingOrder || showLoader}
+                  />
                 </div>
               </div>
             </fieldset>
@@ -468,31 +603,30 @@ emailjs.send(
         </div>
 
         {/* Summary */}
-        <div className="col-md-5">
-          <div className="card shadow-sm border-0 p-4 bg-light">
-            <h5 className="mb-4 fw-bold text-primary d-flex align-items-center">
-              <FaCreditCard className="me-2" />
+        <div className="lg:col-span-5">
+          <div className="bg-linen border border-border rounded-lg p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+            <h5 className="mb-6 font-semibold text-primary flex items-center gap-2">
+              <CreditCard size={20} />
               Order Summary
             </h5>
 
             {/* Optional info */}
-            <div className="mb-2 text-muted">
-              <small>
-                Payment Method: <strong>Prepaid (Razorpay)</strong>
-              </small>
+            <div className="mb-4 text-neutral-mid text-sm">
+              Payment Method: <strong>{paymentMethod === "COD" ? "Cash on Delivery" : "Prepaid (Razorpay)"}</strong>
             </div>
 
-            <div className="mb-3">
-              <label className="form-label fw-semibold">Coupon Code</label>
-              <div className="d-flex">
+            <div className="mb-6">
+              <label className="block font-semibold text-neutral-dark mb-2">Coupon Code</label>
+              <div className="flex gap-2">
                 <input
-                  className="form-control me-2"
+                  className="flex-1 rounded-sm border border-input bg-white px-4 py-3 text-sm focus:border-primary focus:outline-none transition-all disabled:opacity-60"
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value)}
                   disabled={placingOrder || showLoader}
                 />
                 <button
-                  className="btn btn-primary"
+                  type="button"
+                  className="bg-primary text-white rounded-full px-6 py-3 text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60"
                   onClick={handleApplyCoupon}
                   disabled={placingOrder || showLoader}
                 >
@@ -500,45 +634,46 @@ emailjs.send(
                 </button>
               </div>
               {couponMessage && (
-                <small className="text-success">{couponMessage}</small>
+                <small className={couponMessage.startsWith("Invalid") ? "text-error" : "text-success"}>{couponMessage}</small>
               )}
             </div>
 
-            <ul className="list-group mb-3">
+            <div className="space-y-3 mb-6">
               {cartItems.map((item, i) => (
-                <li
+                <div
                   key={i}
-                  className="list-group-item d-flex justify-content-between"
+                  className="flex justify-between items-start py-2 border-b border-border"
                 >
                   <div>
-                    <strong>{item.name}</strong>
-                    <div className="small text-muted">
+                    <strong className="text-neutral-dark">{item.name}</strong>
+                    <div className="text-sm text-neutral-mid">
                       Qty: {item.quantity || 1}
                     </div>
                   </div>
                   <span>₹{item.price}</span>
-                </li>
+                </div>
               ))}
-              <li className="list-group-item d-flex justify-content-between">
+              <div className="flex justify-between py-2 border-b border-border">
                 <span>Subtotal</span>
                 <strong>₹{subtotal}</strong>
-              </li>
-              <li className="list-group-item d-flex justify-content-between">
+              </div>
+              <div className="flex justify-between py-2 border-b border-border">
                 <span>Shipping</span>
                 <strong>₹{shipping}</strong>
-              </li>
-              <li className="list-group-item d-flex justify-content-between fw-bold text-warning">
+              </div>
+              <div className="flex justify-between py-2 font-bold text-primary">
                 <span>Total</span>
                 <span>₹{total}</span>
-              </li>
-            </ul>
+              </div>
+            </div>
 
-            <p className="text-muted mb-3">
+            <p className="text-neutral-mid text-sm mb-6">
               <strong>Estimated Delivery:</strong> {estimatedDelivery}
             </p>
 
             <button
-              className="btn btn-lg btn-warning w-100 fw-semibold"
+              type="button"
+              className="w-full bg-accent text-white rounded-full py-4 text-base font-semibold hover:brightness-90 transition-all disabled:opacity-60"
               onClick={handlePlaceOrderClick}
               disabled={placingOrder || showLoader}
             >

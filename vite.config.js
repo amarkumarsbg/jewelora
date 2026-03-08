@@ -1,10 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 export default defineConfig({
   plugins: [
     react(),
+    tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate', // ensures service worker updates automatically
       manifest: {
@@ -14,7 +17,7 @@ export default defineConfig({
         start_url: '/',
         display: 'standalone', // ✅ full-screen app-like mode
         background_color: '#ffffff',
-        theme_color: '#000000',
+        theme_color: '#1E3A5F',
         icons: [
           {
             src: '/icons/icon-192x192.png',
@@ -31,4 +34,19 @@ export default defineConfig({
     })
   ],
   base: '/', // ✅ keep this for Netlify deployment
+  optimizeDeps: {
+    exclude: ['firebase', 'firebase/app', 'firebase/auth', 'firebase/firestore'],
+  },
+  build: {
+    rollupOptions: {
+      plugins: [
+        visualizer({
+          filename: 'stats.html',
+          open: false,
+          template: 'treemap',
+          gzipSize: true,
+        }),
+      ],
+    },
+  },
 })

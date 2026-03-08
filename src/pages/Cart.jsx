@@ -1,19 +1,28 @@
-
-
 import React, { useEffect, useState } from "react";
 import { collection, getDocs, updateDoc, deleteDoc, doc } from "firebase/firestore";
 import { db } from "../firebase";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import products from "../components/shop/product";
-import { FiMinus, FiPlus, FiTrash2 } from "react-icons/fi";
+import { Minus, Plus, Trash2, LogIn, ShoppingBag } from "lucide-react";
+import { motion } from "framer-motion";
+import toast from "react-hot-toast";
+
+const getEstimatedDelivery = () => {
+  const today = new Date();
+  const start = new Date(today);
+  const end = new Date(today);
+  start.setDate(today.getDate() + 5);
+  end.setDate(today.getDate() + 8);
+  const fmt = (d) => d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  return `${fmt(start)} – ${fmt(end)}`;
+};
 
 const Cart = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [cartItems, setCartItems] = useState([]);
 
-  // Fetch Cart Items
   useEffect(() => {
     const fetchCart = async () => {
       if (!currentUser) return;
@@ -26,193 +35,215 @@ const Cart = () => {
         ...doc.data(),
       }));
 
+      const merged = firebaseItems.map((item) => {
+        const local = products.find((p) => p.id === item.productId);
+        return {
+          ...item,
+          image: local?.image || item.imageUrl || item.image || "",
+          name: item.name || local?.name || "Unnamed Product",
+          price: item.price || local?.price || 0,
+        };
+      });
 
-
-    const merged = firebaseItems.map((item) => {
-  const local = products.find((p) => p.id === item.productId);
-  return {
-    ...item,
-    // Always have image set, using local image or Firestore imageUrl
-    image: local?.image || item.imageUrl || item.image || "",
-    name: item.name || local?.name || "Unnamed Product",
-    price: item.price || local?.price || 0,
-  };
-});
-
-setCartItems(merged);
-
+      setCartItems(merged);
     };
 
     fetchCart();
   }, [currentUser]);
 
-  // Increase Quantity
   const handleIncrease = async (item) => {
     const itemRef = doc(db, "carts", currentUser.uid, "items", item.id);
     const newQuantity = item.quantity + 1;
-
     await updateDoc(itemRef, { quantity: newQuantity });
-
     setCartItems((prev) =>
-      prev.map((i) =>
-        i.id === item.id ? { ...i, quantity: newQuantity } : i
-      )
+      prev.map((i) => (i.id === item.id ? { ...i, quantity: newQuantity } : i))
     );
   };
 
-  // Decrease Quantity
   const handleDecrease = async (item) => {
-    if (item.quantity <= 1) return; // Prevent 0 quantity
-
+    if (item.quantity <= 1) return;
     const itemRef = doc(db, "carts", currentUser.uid, "items", item.id);
     const newQuantity = item.quantity - 1;
-
     await updateDoc(itemRef, { quantity: newQuantity });
-
     setCartItems((prev) =>
-      prev.map((i) =>
-        i.id === item.id ? { ...i, quantity: newQuantity } : i
-      )
+      prev.map((i) => (i.id === item.id ? { ...i, quantity: newQuantity } : i))
     );
   };
 
-  // Remove Item
   const handleRemove = async (itemId) => {
     const itemRef = doc(db, "carts", currentUser.uid, "items", itemId);
     await deleteDoc(itemRef);
-
     setCartItems((prev) => prev.filter((i) => i.id !== itemId));
+    toast.success("Removed from cart");
   };
 
-  const goToCheckout = () => navigate("/checkout");
+  const goToCheckout = () => {
+    if (!currentUser) {
+      toast("Please sign in to proceed to checkout");
+      return;
+    }
+    navigate("/checkout");
+  };
 
   const totalPrice = cartItems.reduce(
     (sum, item) =>
-      sum +
-      parseInt(item.price.toString().replace(/[^\d]/g, "")) * item.quantity,
+      sum + parseInt(String(item.price).replace(/[^\d]/g, "")) * item.quantity,
     0
   );
 
-  return (
-    <div className="container py-5">
-      <h2 className="text-warning fw-bold mb-5 text-center">Your Cart</h2>
-      {cartItems.length === 0 ? (
-        <p className="text-center fs-5 text-muted">Your cart is empty.</p>
-      ) : (
-        <div className="row g-4">
-          <div className="col-lg-8">
-            {cartItems.map((item) => (
-              <div
-                key={item.id}
-                className="card mb-4 shadow-lg border-0 rounded-4"
-                style={{ overflow: "hidden" }}
+  // Sign-in gate for guests
+  if (!currentUser) {
+    return (
+      <section className="min-h-[60vh] bg-cream flex items-center justify-center py-16">
+        <div className="mx-auto max-w-lg px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl border border-black/5 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] p-8 text-center"
+          >
+            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+              <LogIn className="text-primary" size={40} />
+            </div>
+            <h2 className="font-heading text-2xl md:text-3xl font-medium text-neutral-dark mb-3">
+              Sign in to view your cart
+            </h2>
+            <p className="text-neutral-mid mb-8 max-w-sm mx-auto">
+              Create an account or sign in to add items to your cart and proceed to checkout securely.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                to="/signin"
+                className="inline-flex items-center justify-center gap-2 bg-primary text-white rounded-full px-8 py-3.5 font-semibold hover:bg-primary-dark transition-colors"
               >
-                <div className="row g-0 align-items-center">
-                  <div className="col-md-4 p-3">
-                    {/* <img
-                      src={item.image}
-                      alt={item.name}
-                      className="img-fluid rounded-4 shadow"
-                      style={{
-                        objectFit: "cover",
-                        width: "100%",
-                        height: "180px",
-                        borderRadius: "1rem",
-                      }}
-                    /> */}
-                    <div
-  style={{
-    height: "180px",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    background: "#fff",
-    borderRadius: "1rem",
-    overflow: "hidden",
-  }}
->
-  <img
-    src={item.image}
-    alt={item.name}
-    style={{
-      maxHeight: "100%",
-      maxWidth: "100%",
-      objectFit: "contain",
-    }}
-  />
-</div>
+                <LogIn size={20} />
+                Sign In
+              </Link>
+              <Link
+                to="/shop"
+                className="inline-flex items-center justify-center gap-2 border-2 border-neutral-dark text-neutral-dark rounded-full px-8 py-3.5 font-semibold hover:bg-neutral-dark hover:text-white transition-colors"
+              >
+                <ShoppingBag size={20} />
+                Continue Shopping
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 md:py-12"
+    >
+      <h2 className="font-heading text-3xl md:text-4xl font-medium text-neutral-dark mb-8 text-center">
+        Your Cart
+      </h2>
+
+      {cartItems.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="bg-white rounded-2xl border border-black/5 p-12 text-center max-w-md mx-auto"
+        >
+          <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-4">
+            <ShoppingBag className="text-neutral-mid" size={32} />
+          </div>
+          <p className="text-neutral-mid text-lg mb-6">Your cart is empty</p>
+          <Link
+            to="/shop"
+            className="inline-flex items-center gap-2 bg-neutral-dark text-white rounded-full px-6 py-3 font-semibold hover:bg-neutral-dark/90 transition-colors"
+          >
+            <ShoppingBag size={18} />
+            Browse Shop
+          </Link>
+        </motion.div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            {cartItems.map((item) => (
+              <motion.div
+                key={item.id}
+                layout
+                className="bg-white border border-black/5 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col md:flex-row"
+              >
+                <div className="md:w-48 h-48 flex-shrink-0 flex items-center justify-center bg-white p-4">
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                </div>
+                <div className="flex-1 p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <h5 className="font-semibold text-neutral-dark">{item.name}</h5>
+                    <p className="text-primary font-semibold mt-1">₹{item.price}</p>
+                    <p className="text-neutral-mid text-sm mt-1">Beautifully crafted jewelry piece.</p>
                   </div>
-                  <div className="col-md-5 px-4">
-                    <div className="card-body">
-                      <h5 className="card-title fw-bold text-dark">{item.name}</h5>
-                      <p className="card-text text-secondary fs-5 fw-semibold">
-                         {item.price}
-                      </p>
-                      <p className="text-muted small">Beautifully crafted jewelry piece.</p>
-                    </div>
-                  </div>
-                  <div className="col-md-3 d-flex flex-column align-items-center px-3 py-4">
-                    <div className="d-flex align-items-center mb-3 rounded-3 border border-warning px-2 py-1 shadow-sm" style={{backgroundColor: "#fff8e1"}}>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 bg-primary-light/30">
                       <button
-                        className="btn btn-link p-0 me-3 text-warning"
+                        type="button"
+                        className="p-1 text-primary hover:bg-primary/20 rounded transition-colors"
                         onClick={() => handleDecrease(item)}
                         aria-label="Decrease quantity"
                       >
-                        <FiMinus size={22} />
+                        <Minus size={18} />
                       </button>
-                      <input
-                        type="text"
-                        className="form-control text-center fw-semibold"
-                        style={{ width: "55px", fontSize: "1.1rem", backgroundColor: "#fff8e1", border: "none", pointerEvents: "none" }}
-                        value={item.quantity}
-                        readOnly
-                      />
+                      <span className="w-8 text-center font-semibold">{item.quantity}</span>
                       <button
-                        className="btn btn-link p-0 ms-3 text-warning"
+                        type="button"
+                        className="p-1 text-primary hover:bg-primary/20 rounded transition-colors"
                         onClick={() => handleIncrease(item)}
                         aria-label="Increase quantity"
                       >
-                        <FiPlus size={22} />
+                        <Plus size={18} />
                       </button>
                     </div>
                     <button
-                      className="btn btn-outline-danger btn-sm mt-auto w-100 fw-semibold d-flex align-items-center justify-content-center"
+                      type="button"
                       onClick={() => handleRemove(item.id)}
+                      className="flex items-center gap-2 px-4 py-2 border border-error/50 text-error rounded-xl text-sm font-semibold hover:bg-error/10 transition-colors"
                       aria-label="Remove item"
-                      style={{ gap: "6px" }}
                     >
-                      <FiTrash2 />
+                      <Trash2 size={16} />
                       Remove
                     </button>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
 
-          <div className="col-lg-4">
-            <div className="card shadow-lg border-0 rounded-4 p-4" style={{backgroundColor: "#fff9e8"}}>
-              <h5 className="fw-bold mb-4 text-warning text-center">Cart Summary</h5>
-              <p className="mb-2 fs-5">
-                Total Items: <span className="fw-semibold">{cartItems.length}</span>
+          <div>
+            <div className="bg-white border border-black/5 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] sticky top-24">
+              <h5 className="font-heading font-semibold text-neutral-dark mb-4">
+                Cart Summary
+              </h5>
+              <p className="text-sm text-neutral-mid mb-2">
+                Total Items: <span className="font-semibold text-neutral-dark">{cartItems.length}</span>
               </p>
-              <p className="mb-4 fs-4">
-                Total Price: <span className="fw-bold text-warning">₹ {totalPrice}</span>
+              <p className="text-sm text-neutral-mid mb-2">
+                Estimated Delivery: <span className="font-semibold text-neutral-dark">{getEstimatedDelivery()}</span>
+              </p>
+              <p className="text-lg mb-6">
+                Total Price: <span className="font-bold text-primary">₹{totalPrice}</span>
               </p>
               <button
                 onClick={goToCheckout}
-                className="btn btn-warning w-100 fw-bold text-white shadow-sm"
-                style={{ fontSize: "1.15rem" }}
+                className="w-full bg-primary text-white rounded-full py-3.5 font-semibold hover:bg-primary-dark transition-colors"
               >
-                Proceed to Order
+                Proceed to Checkout
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
 
 export default Cart;
-
