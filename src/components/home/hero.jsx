@@ -86,7 +86,9 @@ const Hero = () => {
               {currentProduct.salePrice && (
                 <p className="mt-2 text-white/80 text-sm">
                   <span className="line-through">₹{currentProduct.price}</span>
-                  <span className="ml-2 text-secondary font-semibold">₹{currentProduct.salePrice}</span>
+                  <span className="ml-2 text-secondary font-semibold">
+                    ₹{currentProduct.salePrice}
+                  </span>
                 </p>
               )}
               <Link
@@ -126,7 +128,9 @@ const Hero = () => {
         <>
           <button
             type="button"
-            onClick={() => setCurrentIndex((i) => (i === 0 ? products.length - 1 : i - 1))}
+            onClick={() =>
+              setCurrentIndex((i) => (i === 0 ? products.length - 1 : i - 1))
+            }
             className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors touch-manipulation"
             aria-label="Previous"
           >
