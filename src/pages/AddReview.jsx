@@ -24,11 +24,11 @@ const AddReview = () => {
     setUploading(true);
     const cloudData = new FormData();
     cloudData.append("file", file);
-    cloudData.append("upload_preset", "jewelora_upload");
+    cloudData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
 
     try {
       const res = await fetch(
-        `https://api.cloudinary.com/v1_1/dvxaztwnz/image/upload`,
+        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
         { method: "POST", body: cloudData }
       );
       const data = await res.json();

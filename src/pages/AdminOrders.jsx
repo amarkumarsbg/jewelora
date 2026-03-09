@@ -142,8 +142,8 @@ const AdminOrders = () => {
 
     // 📧 EMAIL TO CUSTOMER
     await emailjs.send(
-      "service_pauibc6",
-      "template_gfzrqmg",
+      import.meta.env.VITE_EMAILJS_SERVICE_ID,
+      import.meta.env.VITE_EMAILJS_TEMPLATE_ID_SHIPMENT,
       {
         to_email: selectedOrder.shippingInfo?.email,
         customer_name: selectedOrder.shippingInfo?.fullName,
@@ -152,7 +152,7 @@ const AdminOrders = () => {
         tracking_message: trackingMessage,
         tracking_link: trackingLink,
       },
-      { publicKey: "AL9Hdy7gl6JXUpK5z" }
+      { publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY }
     );
 
     // RESET

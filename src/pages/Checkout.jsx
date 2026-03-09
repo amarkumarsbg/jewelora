@@ -217,8 +217,8 @@ const Checkout = () => {
           );
         }
         emailjs.send(
-          "service_pauibc6",
-          "template_n32ehvb",
+          import.meta.env.VITE_EMAILJS_SERVICE_ID,
+          import.meta.env.VITE_EMAILJS_TEMPLATE_ID_ORDER,
           {
             customer_name: fullName,
             customer_email: email,
@@ -230,7 +230,7 @@ const Checkout = () => {
               .join(", "),
             address: `${address}, ${city}, ${state} - ${pincode}`,
           },
-          "AL9Hdy7gl6JXUpK5z"
+          { publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY }
         ).catch(() => { /* Email notification failed */ });
         setShowLoader(false);
         setPlacingOrder(false);
@@ -269,7 +269,7 @@ const Checkout = () => {
       setShowLoader(false);
 
       const options = {
-        key: "rzp_live_Rw9rVaR1u2yTDV",
+        key: import.meta.env.VITE_RAZORPAY_KEY,
         amount: razorpayOrder.amount,
         currency: "INR",
         name: "Jewelora",
@@ -313,8 +313,8 @@ const Checkout = () => {
 // SEND ORDER CONFIRMATION EMAIL
 // =======================
 emailjs.send(
-  "service_pauibc6",          // your EmailJS service ID
-  "template_n32ehvb",  // your template ID
+  import.meta.env.VITE_EMAILJS_SERVICE_ID,
+  import.meta.env.VITE_EMAILJS_TEMPLATE_ID_ORDER,
   {
     customer_name: fullName,
     customer_email: email,
@@ -326,7 +326,7 @@ emailjs.send(
       .join(", "),
     address: `${address}, ${city}, ${state} - ${pincode}`,
   },
-  "AL9Hdy7gl6JXUpK5z"           // EmailJS public key
+  { publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY }
 )
 .catch(() => {
   /* Email notification failed - order still placed */
