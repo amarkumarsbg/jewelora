@@ -39,31 +39,31 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-[#1a1a1a] text-white pt-20 pb-12 mt-auto">
+    <footer className="bg-[#1a1a1a] text-white pt-12 sm:pt-16 lg:pt-20 pb-20 lg:pb-12 mt-auto safe-area-pb">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Trust badges */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16 pb-12 border-b border-white/20">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-10 sm:mb-16 pb-8 sm:pb-12 border-b border-white/20">
           {[
             { icon: Shield, label: "Secure Checkout", desc: "100% safe payment" },
             { icon: Truck, label: "Free Shipping", desc: "On orders over ₹999" },
             { icon: RotateCcw, label: "Easy Returns", desc: "Hassle-free exchanges" },
             { icon: CreditCard, label: "Secure Payment", desc: "Razorpay protected" },
           ].map(({ icon: Icon, label, desc }) => (
-            <div key={label} className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+            <div key={label} className="flex items-center gap-3 sm:gap-4 min-w-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
                 <Icon className="text-primary" size={22} />
               </div>
-              <div>
-                <p className="font-semibold text-white text-sm">{label}</p>
-                <p className="text-white/60 text-xs">{desc}</p>
+              <div className="min-w-0">
+                <p className="font-semibold text-white text-xs sm:text-sm truncate">{label}</p>
+                <p className="text-white/60 text-[11px] sm:text-xs line-clamp-1">{desc}</p>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-          {/* Brand + Social */}
-          <div className="flex flex-col items-center md:items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10 lg:gap-12">
+          {/* Brand + Social - full width on mobile, 2 cols on md, 1 on lg */}
+          <div className="flex flex-col items-center md:items-start md:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-3 mb-4">
               <img
                 src="https://res.cloudinary.com/dvxaztwnz/image/upload/v1754728677/jewelora_rlc5cq.jpg"
@@ -94,7 +94,7 @@ const Footer = () => {
                 href="https://x.com/jew_elora"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 hover:scale-110 transition-all"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 hover:scale-110 transition-all touch-manipulation"
                 aria-label="X (Twitter)"
               >
                 <FaXTwitter size={20} />
@@ -120,12 +120,14 @@ const Footer = () => {
             </div>
           </div>
 
+          {/* Three sections side by side on mobile, grid items on md+ */}
+          <div className="grid grid-cols-3 md:contents gap-4 md:gap-0">
           {/* Shop + Explore */}
-          <div>
-            <h6 className="font-heading font-semibold text-white mb-5">
+          <div className="min-w-0">
+            <h6 className="font-heading font-semibold text-white mb-3 sm:mb-5 text-xs sm:text-base">
               Shop + Explore
             </h6>
-            <ul className="space-y-3">
+            <ul className="space-y-0.5 sm:space-y-3">
               {[
                 { to: "/shop", label: "Shop it All" },
                 { to: "/", label: "Home" },
@@ -136,7 +138,7 @@ const Footer = () => {
                 <li key={link.to}>
                   <Link
                     to={link.to}
-                    className="text-sm text-white/70 hover:text-white transition-colors"
+                    className="block py-2.5 sm:py-0 text-sm text-white/70 hover:text-white transition-colors touch-manipulation"
                   >
                     {link.label}
                   </Link>
@@ -146,20 +148,20 @@ const Footer = () => {
           </div>
 
           {/* Info */}
-          <div>
-            <h6 className="font-heading font-semibold text-white mb-5">
+          <div className="min-w-0">
+            <h6 className="font-heading font-semibold text-white mb-3 sm:mb-5 text-xs sm:text-base">
               Info
             </h6>
-            <ul className="space-y-3 text-sm text-white/70">
+            <ul className="space-y-0.5 sm:space-y-3 text-[11px] sm:text-sm text-white/70">
               {currentUser && (
                 <>
                   <li>
-                    <Link to="/orders" className="hover:text-white transition-colors">
+                    <Link to="/orders" className="block py-1.5 sm:py-0 hover:text-white transition-colors touch-manipulation">
                       My Orders
                     </Link>
                   </li>
                   <li>
-                    <Link to="/cart" className="hover:text-white transition-colors">
+                    <Link to="/cart" className="block py-1.5 sm:py-0 hover:text-white transition-colors touch-manipulation">
                       Cart
                     </Link>
                   </li>
@@ -167,34 +169,34 @@ const Footer = () => {
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="text-left hover:text-white transition-colors font-medium"
+                      className="block w-full text-left py-1.5 sm:py-0 hover:text-white transition-colors font-medium touch-manipulation"
                     >
                       Logout
                     </button>
                   </li>
                 </>
               )}
-              <li><Link to="/policies/terms" className="hover:text-white transition-colors">Terms</Link></li>
-              <li><Link to="/policies/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
-              <li><Link to="/policies/refund" className="hover:text-white transition-colors">Refund</Link></li>
-              <li><Link to="/policies/replacement" className="hover:text-white transition-colors">Replacement</Link></li>
-              <li><Link to="/policies/cancellation" className="hover:text-white transition-colors">Cancellation</Link></li>
-              <li><Link to="/policies/shipping" className="hover:text-white transition-colors">Shipping</Link></li>
-              <li><Link to="/faq" className="hover:text-white transition-colors">FAQ</Link></li>
-              <li><Link to="/add-review" className="hover:text-white transition-colors">Give Review</Link></li>
+              <li><Link to="/policies/terms" className="block py-1.5 sm:py-0 hover:text-white transition-colors touch-manipulation">Terms</Link></li>
+              <li><Link to="/policies/privacy" className="block py-1.5 sm:py-0 hover:text-white transition-colors touch-manipulation">Privacy</Link></li>
+              <li><Link to="/policies/refund" className="block py-1.5 sm:py-0 hover:text-white transition-colors touch-manipulation">Refund</Link></li>
+              <li><Link to="/policies/replacement" className="block py-1.5 sm:py-0 hover:text-white transition-colors touch-manipulation">Replacement</Link></li>
+              <li><Link to="/policies/cancellation" className="block py-1.5 sm:py-0 hover:text-white transition-colors touch-manipulation">Cancellation</Link></li>
+              <li><Link to="/policies/shipping" className="block py-1.5 sm:py-0 hover:text-white transition-colors touch-manipulation">Shipping</Link></li>
+              <li><Link to="/faq" className="block py-1.5 sm:py-0 hover:text-white transition-colors touch-manipulation">FAQ</Link></li>
+              <li><Link to="/add-review" className="block py-1.5 sm:py-0 hover:text-white transition-colors touch-manipulation">Give Review</Link></li>
               <li>
                 <a
                   href="https://collaboration.payment.jewelora.in"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-primary transition-colors"
+                  className="block py-1.5 sm:py-0 hover:text-primary transition-colors touch-manipulation"
                 >
                   Collaborate With Us
                 </a>
               </li>
               {!currentUser && (
                 <li>
-                  <Link to="/signin" className="font-semibold hover:text-primary transition-colors">
+                  <Link to="/signin" className="block py-1.5 sm:py-0 font-semibold hover:text-primary transition-colors touch-manipulation">
                     Sign In
                   </Link>
                 </li>
@@ -203,34 +205,35 @@ const Footer = () => {
           </div>
 
           {/* Newsletter */}
-          <div>
-            <h6 className="font-heading font-semibold text-white mb-5">
+          <div className="min-w-0">
+            <h6 className="font-heading font-semibold text-white mb-3 sm:mb-5 text-xs sm:text-base">
               Refresh Your Inbox
             </h6>
-            <p className="text-sm text-white/70 mb-4">
+            <p className="text-[11px] sm:text-sm text-white/70 mb-3 sm:mb-4">
               Join our email list to get 10% off your first order, plus early access to offers.
             </p>
-            <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3">
+            <form onSubmit={handleNewsletterSubmit} className="flex flex-col gap-2 sm:flex-row sm:gap-3">
               <input
                 type="email"
                 placeholder="Email address"
                 value={newsletterEmail}
                 onChange={(e) => setNewsletterEmail(e.target.value)}
                 required
-                className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/50 focus:border-primary focus:ring-2 focus:ring-primary/30 focus:outline-none transition-all"
+                className="w-full min-h-[44px] rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/50 focus:border-primary focus:ring-2 focus:ring-primary/30 focus:outline-none transition-all"
               />
               <button
                 type="submit"
                 disabled={newsletterLoading}
-                className="bg-primary text-white rounded-xl px-6 py-3 text-sm font-semibold hover:bg-primary-dark transition-colors whitespace-nowrap disabled:opacity-70"
+                className="min-h-[44px] bg-primary text-white rounded-xl px-6 py-3 text-sm font-semibold hover:bg-primary-dark transition-colors whitespace-nowrap disabled:opacity-70 touch-manipulation"
               >
                 {newsletterLoading ? "Signing up..." : "Sign Up"}
               </button>
             </form>
           </div>
+          </div>
         </div>
 
-        <div className="mt-16 pt-8 border-t border-white/20 text-center text-sm text-white/60">
+        <div className="mt-10 sm:mt-16 pt-6 sm:pt-8 border-t border-white/20 text-center text-xs sm:text-sm text-white/60 px-2">
           &copy; {new Date().getFullYear()} Jewelora. All Rights Reserved.
         </div>
       </div>

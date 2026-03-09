@@ -92,7 +92,7 @@ function App() {
       <TambolaModal />
       <ScrollToTop />
       <Navbar />
-      <div className="flex-1 pb-24 lg:pb-0">
+      <div className="flex-1 pb-24 lg:pb-0 safe-area-pb">
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Home />} />

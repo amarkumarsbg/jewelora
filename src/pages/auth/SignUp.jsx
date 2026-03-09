@@ -5,12 +5,12 @@ import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
 
 const SignUp = () => {
+  const { updateAuthUser } = useAuth();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { updateAuthUser } = useAuth();
 
   const handleSignUp = async (e) => {
     e.preventDefault();

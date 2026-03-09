@@ -64,10 +64,10 @@ const Hero = () => {
   const currentProduct = products[currentIndex];
 
   return (
-    <section className="relative min-h-[50vh] md:min-h-[55vh] flex overflow-hidden bg-primary">
+    <section className="relative min-h-[50vh] md:min-h-[55vh] flex overflow-hidden bg-primary pb-16 lg:pb-0">
       <div className="flex flex-col md:flex-row w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Left: Details */}
-        <div className="flex-1 flex flex-col justify-center px-6 py-10 md:py-14 md:pl-12 md:pr-8 order-2 md:order-1">
+        <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 py-8 md:py-14 md:pl-12 md:pr-8 order-2 md:order-1">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentProduct.firestoreId}
@@ -91,7 +91,7 @@ const Hero = () => {
               )}
               <Link
                 to={`/product/${currentProduct.firestoreId}`}
-                className="inline-block mt-6 bg-white text-neutral-dark rounded-full px-8 py-3 text-sm font-semibold uppercase tracking-wider hover:bg-white/95 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                className="inline-flex items-center justify-center min-h-[44px] mt-6 bg-white text-neutral-dark rounded-full px-8 py-3 text-sm font-semibold uppercase tracking-wider hover:bg-white/95 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 touch-manipulation"
               >
                 Shop Now
               </Link>
@@ -115,7 +115,7 @@ const Hero = () => {
                 alt={currentProduct.name}
                 width={520}
                 lazy={false}
-                className="max-h-[280px] md:max-h-[360px] w-auto object-contain"
+                className="max-h-[200px] sm:max-h-[280px] md:max-h-[360px] w-auto object-contain"
               />
             </motion.div>
           </AnimatePresence>
@@ -127,7 +127,7 @@ const Hero = () => {
           <button
             type="button"
             onClick={() => setCurrentIndex((i) => (i === 0 ? products.length - 1 : i - 1))}
-            className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
+            className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors touch-manipulation"
             aria-label="Previous"
           >
             <ChevronLeft size={22} />
@@ -135,24 +135,11 @@ const Hero = () => {
           <button
             type="button"
             onClick={() => setCurrentIndex((i) => (i + 1) % products.length)}
-            className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors touch-manipulation"
+            className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors touch-manipulation"
             aria-label="Next"
           >
             <ChevronRight size={22} />
           </button>
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-            {products.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setCurrentIndex(i)}
-                aria-label={`Go to slide ${i + 1}`}
-                className={`min-w-[44px] min-h-[44px] rounded-full transition-all touch-manipulation ${
-                  i === currentIndex ? "bg-white w-8 h-3" : "bg-white/50 w-3 h-3 hover:bg-white/70"
-                }`}
-              />
-            ))}
-          </div>
         </>
       )}
     </section>

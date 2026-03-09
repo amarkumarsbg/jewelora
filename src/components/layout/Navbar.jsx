@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { LogIn, ShoppingCart, User, Menu, X, Home, ShoppingBag, LayoutGrid, Info, Heart, Package, MapPin, LogOut } from "lucide-react";
+import { createPortal } from "react-dom";
+import { LogIn, ShoppingCart, User, Menu, X, Home, ShoppingBag, LayoutGrid, Info, Heart, Package, MapPin, LogOut, HelpCircle } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { useAddToCartAnimation } from "../../context/AddToCartAnimationContext";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../../firebase";
 import AnnouncementBar from "../AnnouncementBar";
@@ -46,6 +47,15 @@ const Navbar = () => {
     setCartDrawerOpen(false);
   };
 
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileMenuOpen]);
+
   const handleLogout = async () => {
     await logout();
     navigate("/signin");
@@ -56,20 +66,10 @@ const Navbar = () => {
     <>
       <AnnouncementBar />
 
-      <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-black/5 shadow-[0_1px_0_rgba(0,0,0,0.05)]">
+      <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-black/5 shadow-[0_1px_0_rgba(0,0,0,0.05)] safe-area-pt">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-20 items-center justify-between">
-            {/* Hamburger */}
-            <button
-              type="button"
-              className="lg:hidden p-2 -ml-2 text-neutral-dark hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-
-            {/* Logo */}
+          <div className="flex h-16 sm:h-20 items-center justify-between">
+            {/* Logo - left on mobile */}
             <NavLink to="/" className="flex items-center gap-2 shrink-0" onClick={closeMenu}>
               <img
                 src="https://res.cloudinary.com/dvxaztwnz/image/upload/v1754728677/jewelora_rlc5cq.jpg"
@@ -77,7 +77,7 @@ const Navbar = () => {
                 className="rounded-full border-2 border-secondary object-contain bg-white"
                 style={{ width: 48, height: 48, minWidth: 48, minHeight: 48 }}
               />
-              <span className="hidden sm:inline font-[family-name:var(--font-heading)] text-2xl font-bold text-neutral-dark">
+              <span className="font-[family-name:var(--font-heading)] text-lg sm:text-2xl font-bold text-neutral-dark">
                 Jewelora
               </span>
             </NavLink>
@@ -110,8 +110,8 @@ const Navbar = () => {
               ))}
             </ul>
 
-            {/* Right: Wishlist + Cart + Profile */}
-            <div className="flex items-center gap-3">
+            {/* Right: Wishlist + Cart + Profile - desktop only */}
+            <div className="hidden lg:flex items-center gap-3">
               {!isAdmin && (
                 <>
                   {currentUser && (
@@ -303,85 +303,223 @@ const Navbar = () => {
                 <NavLink
                   to="/signin"
                   onClick={closeMenu}
-                  className="flex items-center gap-2 bg-primary text-white rounded-full px-6 py-2.5 text-xs uppercase tracking-[0.1em] font-semibold hover:bg-primary-dark hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                  className="flex items-center gap-2 bg-primary text-white rounded-full px-5 sm:px-6 py-2.5 min-h-[44px] text-xs uppercase tracking-[0.1em] font-semibold hover:bg-primary-dark hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 touch-manipulation"
                 >
                   <LogIn size={16} /> Login
                 </NavLink>
               )}
             </div>
+
+            {/* Hamburger - right on mobile */}
+            <button
+              type="button"
+              className="lg:hidden min-w-[44px] min-h-[44px] p-2 flex items-center justify-center text-neutral-dark hover:text-primary transition-colors touch-manipulation"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
           </div>
         </div>
 
-        {/* Mobile Menu Overlay */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 z-50">
-            <div
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-              onClick={closeMenu}
-              aria-hidden="true"
-            />
-            <div className="absolute right-0 top-0 h-full w-72 max-w-[85vw] bg-white shadow-xl flex flex-col">
-              <div className="p-6 border-b border-border flex justify-between items-center">
-                <span className="font-[family-name:var(--font-heading)] text-xl font-semibold">
-                  Menu
-                </span>
+        {/* Mobile Menu Overlay - rendered via portal to ensure visibility */}
+        {typeof document !== "undefined" && createPortal(
+          <AnimatePresence>
+          {mobileMenuOpen && (
+            <>
+              <motion.div
+                key="menu-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="lg:hidden fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm"
+                onClick={closeMenu}
+                aria-hidden="true"
+              />
+              <motion.div
+                key="menu-panel"
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "tween", duration: 0.25, ease: "easeOut" }}
+                className="lg:hidden fixed right-0 top-0 z-[10000] h-full w-[80%] max-w-[360px] min-w-[280px] bg-white shadow-[0_0_50px_rgba(0,0,0,0.15)] flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Menu"
+            >
+              {/* Header */}
+              <div className="shrink-0 px-5 pt-5 pb-4 flex items-start justify-between border-b border-neutral-200/80">
                 <button
                   type="button"
                   onClick={closeMenu}
-                  className="min-w-[44px] min-h-[44px] p-2 flex items-center justify-center text-neutral-dark hover:text-primary touch-manipulation"
+                  className="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center text-neutral-dark hover:text-primary transition-colors touch-manipulation"
+                  aria-label="Close menu"
                 >
                   <X size={24} />
                 </button>
+                <div className="text-right">
+                  <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Flat 20% OFF</p>
+                  <p className="text-[10px] text-neutral-mid mt-0.5">on first order</p>
+                </div>
               </div>
-              <ul className="p-6 flex flex-col gap-4">
-                {navLinks.map(({ path, label }) => (
-                  <li key={path}>
-                    <NavLink
-                      to={path}
-                      onClick={closeMenu}
-                      className={({ isActive }) =>
-                      `block text-sm uppercase tracking-wider font-semibold py-2 ${
-                        isActive ? "text-primary" : "text-neutral-dark hover:text-primary"
-                      }`
-                      }
-                    >
-                      {label}
-                    </NavLink>
+
+              {/* Menu list */}
+              <ul className="flex-1 min-h-0 flex flex-col overflow-y-auto overscroll-contain">
+                <li className="border-b border-neutral-100">
+                  <NavLink to="/" onClick={closeMenu} className={({ isActive }) => `flex items-center gap-4 px-5 py-4 text-sm font-medium text-neutral-dark hover:bg-neutral-50 transition-colors ${isActive ? "bg-primary/5 text-primary" : ""}`}>
+                    <Home size={22} className="text-neutral-mid shrink-0" />
+                    Home
+                  </NavLink>
+                </li>
+                <li className="border-b border-neutral-100">
+                  <NavLink to="/shop" onClick={closeMenu} className={({ isActive }) => `flex items-center gap-4 px-5 py-4 text-sm font-medium text-neutral-dark hover:bg-neutral-50 transition-colors ${isActive ? "bg-primary/5 text-primary" : ""}`}>
+                    <ShoppingBag size={22} className="text-neutral-mid shrink-0" />
+                    Shop
+                  </NavLink>
+                </li>
+                <li className="border-b border-neutral-100">
+                  <NavLink to="/category" onClick={closeMenu} className={({ isActive }) => `flex items-center gap-4 px-5 py-4 text-sm font-medium text-neutral-dark hover:bg-neutral-50 transition-colors ${isActive ? "bg-primary/5 text-primary" : ""}`}>
+                    <LayoutGrid size={22} className="text-neutral-mid shrink-0" />
+                    Category
+                  </NavLink>
+                </li>
+                <li className="border-b border-neutral-100">
+                  <NavLink to="/about" onClick={closeMenu} className={({ isActive }) => `flex items-center gap-4 px-5 py-4 text-sm font-medium text-neutral-dark hover:bg-neutral-50 transition-colors ${isActive ? "bg-primary/5 text-primary" : ""}`}>
+                    <Info size={22} className="text-neutral-mid shrink-0" />
+                    About
+                  </NavLink>
+                </li>
+                <li className="border-b border-neutral-100">
+                  <NavLink to="/contact" onClick={closeMenu} className={({ isActive }) => `flex items-center gap-4 px-5 py-4 text-sm font-medium text-neutral-dark hover:bg-neutral-50 transition-colors ${isActive ? "bg-primary/5 text-primary" : ""}`}>
+                    <MapPin size={22} className="text-neutral-mid shrink-0" />
+                    Contact
+                  </NavLink>
+                </li>
+                <li className="border-b border-neutral-100">
+                  <NavLink to="/faq" onClick={closeMenu} className={({ isActive }) => `flex items-center gap-4 px-5 py-4 text-sm font-medium text-neutral-dark hover:bg-neutral-50 transition-colors ${isActive ? "bg-primary/5 text-primary" : ""}`}>
+                    <HelpCircle size={22} className="text-neutral-mid shrink-0" />
+                    FAQ
+                  </NavLink>
+                </li>
+
+                {!isAdmin && (
+                  <>
+                    <li className="border-b border-neutral-100">
+                      <button type="button" onClick={() => { setCartDrawerOpen(true); closeMenu(); }} className="flex items-center gap-4 w-full px-5 py-4 text-sm font-medium text-neutral-dark hover:bg-neutral-50 transition-colors text-left">
+                        <ShoppingCart size={22} className="text-neutral-mid shrink-0" />
+                        Cart
+                        {currentUser && cartCount > 0 && (
+                          <span className="ml-auto bg-primary text-white rounded-full min-w-[22px] h-[22px] px-1.5 text-xs flex items-center justify-center font-semibold">
+                            {cartCount}
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                    {currentUser ? (
+                      <>
+                        <li className="border-b border-neutral-100">
+                          <NavLink to="/wishlist" onClick={closeMenu} className={({ isActive }) => `flex items-center gap-4 px-5 py-4 text-sm font-medium text-neutral-dark hover:bg-neutral-50 transition-colors ${isActive ? "bg-primary/5 text-primary" : ""}`}>
+                            <Heart size={22} className="text-neutral-mid shrink-0" />
+                            Wishlist
+                            {wishlistCount > 0 && (
+                              <span className="ml-auto bg-primary text-white rounded-full min-w-[22px] h-[22px] px-1.5 text-xs flex items-center justify-center font-semibold">
+                                {wishlistCount}
+                              </span>
+                            )}
+                          </NavLink>
+                        </li>
+                        <li className="border-b border-neutral-100">
+                          <NavLink to="/orders" onClick={closeMenu} className={({ isActive }) => `flex items-center gap-4 px-5 py-4 text-sm font-medium text-neutral-dark hover:bg-neutral-50 transition-colors ${isActive ? "bg-primary/5 text-primary" : ""}`}>
+                            <Package size={22} className="text-neutral-mid shrink-0" />
+                            My Orders
+                          </NavLink>
+                        </li>
+                        <li className="border-b border-neutral-100">
+                          <NavLink to="/saved-address" onClick={closeMenu} className={({ isActive }) => `flex items-center gap-4 px-5 py-4 text-sm font-medium text-neutral-dark hover:bg-neutral-50 transition-colors ${isActive ? "bg-primary/5 text-primary" : ""}`}>
+                            <MapPin size={22} className="text-neutral-mid shrink-0" />
+                            Saved Addresses
+                          </NavLink>
+                        </li>
+                        <li>
+                          <button type="button" onClick={handleLogout} className="flex items-center gap-4 w-full px-5 py-4 text-sm font-semibold text-error hover:bg-error/10 transition-colors">
+                            <LogOut size={22} className="shrink-0" />
+                            Log out
+                          </button>
+                        </li>
+                      </>
+                    ) : (
+                      <li>
+                        <NavLink to="/signin" onClick={closeMenu} className="flex items-center gap-4 px-5 py-4 text-sm font-semibold bg-primary text-white hover:bg-primary-dark transition-colors">
+                          <LogIn size={22} />
+                          Login
+                        </NavLink>
+                      </li>
+                    )}
+                  </>
+                )}
+
+                {isAdmin && (
+                  <li>
+                    <button type="button" onClick={handleLogout} className="flex items-center gap-4 w-full px-5 py-4 text-sm font-semibold text-error hover:bg-error/10 transition-colors">
+                      <LogOut size={22} className="shrink-0" />
+                      Log out
+                    </button>
                   </li>
-                ))}
+                )}
               </ul>
-            </div>
-          </div>
+
+              {/* User profile section at bottom */}
+              {currentUser && (
+                <div className="shrink-0 px-5 py-4 border-t border-neutral-200/80 bg-neutral-50/50">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-lg shrink-0">
+                      {(currentUser.displayName || currentUser.email || "U").charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-neutral-dark truncate">
+                        {currentUser.displayName || "User"}
+                      </p>
+                      <p className="text-xs text-neutral-mid truncate">{currentUser.email}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </>
+        )}
+          </AnimatePresence>,
+          document.body
         )}
       </nav>
 
       <CartDrawer isOpen={cartDrawerOpen} onClose={() => setCartDrawerOpen(false)} />
 
       {/* Mobile Bottom Nav */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-border flex justify-around py-2 safe-area-pb">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-border flex justify-around items-stretch py-2 safe-area-pb">
         <NavLink
           to="/"
           onClick={closeMenu}
-          className="flex flex-col items-center gap-1 py-2 px-4 text-neutral-mid hover:text-primary transition-colors"
+          className="flex flex-col items-center justify-center gap-0.5 min-h-[56px] py-2 px-3 sm:px-4 text-neutral-mid hover:text-primary transition-colors touch-manipulation"
         >
           <Home size={20} />
-          <span className="text-xs">Home</span>
+          <span className="text-[10px] sm:text-xs">Home</span>
         </NavLink>
         <NavLink
           to="/shop"
           onClick={closeMenu}
-          className="flex flex-col items-center gap-1 py-2 px-4 text-neutral-mid hover:text-primary transition-colors"
+          className="flex flex-col items-center justify-center gap-0.5 min-h-[56px] py-2 px-3 sm:px-4 text-neutral-mid hover:text-primary transition-colors touch-manipulation"
         >
           <ShoppingBag size={20} />
-          <span className="text-xs">Shop</span>
+          <span className="text-[10px] sm:text-xs">Shop</span>
         </NavLink>
         <NavLink
           to="/category"
           onClick={closeMenu}
-          className="flex flex-col items-center gap-1 py-2 px-4 text-neutral-mid hover:text-primary transition-colors"
+          className="flex flex-col items-center justify-center gap-0.5 min-h-[56px] py-2 px-3 sm:px-4 text-neutral-mid hover:text-primary transition-colors touch-manipulation"
         >
           <LayoutGrid size={20} />
-          <span className="text-xs">Category</span>
+          <span className="text-[10px] sm:text-xs">Category</span>
         </NavLink>
         {!isAdmin && (
           <>
@@ -389,10 +527,10 @@ const Navbar = () => {
               <NavLink
                 to="/wishlist"
                 onClick={closeMenu}
-                className="flex flex-col items-center gap-1 py-2 px-4 text-neutral-mid hover:text-primary transition-colors relative"
+                className="flex flex-col items-center justify-center gap-0.5 min-h-[56px] py-2 px-3 sm:px-4 text-neutral-mid hover:text-primary transition-colors relative touch-manipulation"
               >
                 <Heart size={20} />
-                <span className="text-xs">Wishlist</span>
+                <span className="text-[10px] sm:text-xs">Wishlist</span>
                 {wishlistCount > 0 && (
                   <span className="absolute top-1 right-1 bg-primary text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center">
                     {wishlistCount}
@@ -403,10 +541,10 @@ const Navbar = () => {
             <button
               type="button"
               onClick={() => setCartDrawerOpen(true)}
-              className="flex flex-col items-center gap-1 py-2 px-4 text-neutral-mid hover:text-primary transition-colors relative"
+              className="flex flex-col items-center justify-center gap-0.5 min-h-[56px] py-2 px-3 sm:px-4 text-neutral-mid hover:text-primary transition-colors relative touch-manipulation"
             >
               <ShoppingCart size={20} />
-              <span className="text-xs">Cart</span>
+              <span className="text-[10px] sm:text-xs">Cart</span>
               {currentUser && cartCount > 0 && (
                 <span className="absolute top-1 right-1 bg-primary text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center">
                   {cartCount}
@@ -418,10 +556,10 @@ const Navbar = () => {
         <NavLink
           to="/about"
           onClick={closeMenu}
-          className="flex flex-col items-center gap-1 py-2 px-4 text-neutral-mid hover:text-primary transition-colors"
+          className="flex flex-col items-center justify-center gap-0.5 min-h-[56px] py-2 px-3 sm:px-4 text-neutral-mid hover:text-primary transition-colors touch-manipulation"
         >
           <Info size={20} />
-          <span className="text-xs">About</span>
+          <span className="text-[10px] sm:text-xs">About</span>
         </NavLink>
       </div>
     </>

@@ -114,6 +114,9 @@
 .safe-area-pb {
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
+.safe-area-pt {
+  padding-top: env(safe-area-inset-top, 0);
+}
 
 /* Shared form input styling - use .input-modern for consistency */
 .input-modern {

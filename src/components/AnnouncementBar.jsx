@@ -29,19 +29,21 @@ const AnnouncementBar = () => {
   }, [offers.length]);
 
   return (
-    <div className="bg-gradient-to-r from-primary via-primary-dark to-primary text-white flex items-center justify-center py-2.5 text-xs font-medium tracking-widest uppercase gap-6">
+    <div className="bg-gradient-to-r from-primary via-primary-dark to-primary text-white flex items-center justify-center gap-3 sm:gap-6 py-2.5 px-2 sm:px-4 text-[11px] sm:text-xs font-medium tracking-widest uppercase safe-area-pt">
       <button
         type="button"
-        className="min-w-[44px] min-h-[44px] p-3 flex items-center justify-center hover:bg-white/15 rounded-full transition-all duration-200 touch-manipulation"
+        className="shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/15 rounded-full transition-all duration-200 touch-manipulation"
         onClick={prevOffer}
         aria-label="Previous offer"
       >
         <ChevronLeft size={16} />
       </button>
-      <span className="transition-opacity duration-300">{offers[currentIndex]}</span>
+      <span className="flex-1 min-w-0 text-center truncate sm:whitespace-normal sm:overflow-visible transition-opacity duration-300">
+        {offers[currentIndex]}
+      </span>
       <button
         type="button"
-        className="min-w-[44px] min-h-[44px] p-3 flex items-center justify-center hover:bg-white/15 rounded-full transition-all duration-200 touch-manipulation"
+        className="shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/15 rounded-full transition-all duration-200 touch-manipulation"
         onClick={nextOffer}
         aria-label="Next offer"
       >
