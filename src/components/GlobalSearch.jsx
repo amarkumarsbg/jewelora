@@ -47,7 +47,7 @@ export default function GlobalSearch() {
           <button
             type="button"
             onClick={() => { setQuery(""); setIsOpen(false); }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-neutral-100 text-neutral-mid"
+            className="absolute right-2 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] p-2.5 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-mid touch-manipulation"
           >
             <X size={14} />
           </button>

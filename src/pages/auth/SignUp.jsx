@@ -30,8 +30,8 @@ const SignUp = () => {
   };
 
   return (
-    <section className="flex justify-center items-center py-16 bg-cream min-h-[60vh]">
-      <div className="w-full max-w-md bg-white rounded-lg border border-border p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+    <section className="flex justify-center items-center py-16 px-4 bg-cream min-h-[60vh]">
+      <div className="w-full max-w-md bg-white rounded-lg border border-border p-6 sm:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04)] mx-auto">
         <h2 className="text-center font-heading text-2xl font-semibold text-neutral-dark mb-6">
           Create Account
         </h2>

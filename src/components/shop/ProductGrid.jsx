@@ -112,7 +112,7 @@ function ProductCard({ prod, index, isInWishlist, onToggleWishlist, onQuickView,
           />
           <button
             type="button"
-            className={`absolute top-3 right-3 p-2.5 rounded-full shadow-sm transition-all duration-300 ${
+            className={`absolute top-3 right-3 min-w-[44px] min-h-[44px] p-2.5 flex items-center justify-center rounded-full shadow-sm transition-all duration-300 touch-manipulation ${
               isInWishlist
                 ? "bg-primary text-white hover:bg-primary-dark"
                 : "bg-white/90 text-neutral-mid hover:bg-primary hover:text-white"
@@ -172,13 +172,13 @@ function ProductCard({ prod, index, isInWishlist, onToggleWishlist, onQuickView,
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); onQuickView?.(); }}
-              className="flex-1 text-center border border-neutral-dark/30 text-neutral-dark rounded-xl py-3 text-xs font-semibold uppercase tracking-wider hover:bg-neutral-dark/5 transition-all"
+              className="flex-1 min-h-[44px] text-center border border-neutral-dark/30 text-neutral-dark rounded-xl py-3 text-xs font-semibold uppercase tracking-wider hover:bg-neutral-dark/5 transition-all touch-manipulation"
             >
               <Eye size={14} className="inline mr-1" /> Quick View
             </button>
             <Link
               to={`/product/${prod.firestoreId || prod.id}`}
-              className="flex-1 text-center border-2 border-neutral-dark text-neutral-dark rounded-xl py-3 text-xs font-semibold uppercase tracking-wider hover:bg-neutral-dark hover:text-white transition-all duration-200"
+              className="flex-1 min-h-[44px] flex items-center justify-center border-2 border-neutral-dark text-neutral-dark rounded-xl py-3 text-xs font-semibold uppercase tracking-wider hover:bg-neutral-dark hover:text-white transition-all duration-200 touch-manipulation"
             >
               View Details
             </Link>

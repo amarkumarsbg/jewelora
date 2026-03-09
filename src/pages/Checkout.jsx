@@ -451,8 +451,8 @@ emailjs.send(
             {/* Payment method selector */}
             <div className="mb-6">
               <label className="block font-semibold text-neutral-dark mb-2">Payment Method</label>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <label className="flex items-center gap-2 cursor-pointer min-h-[44px]">
                   <input
                     type="radio"
                     name="paymentMethod"
@@ -463,7 +463,7 @@ emailjs.send(
                   />
                   <span>Online Payment (Razorpay)</span>
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex items-center gap-2 cursor-pointer min-h-[44px]">
                   <input
                     type="radio"
                     name="paymentMethod"

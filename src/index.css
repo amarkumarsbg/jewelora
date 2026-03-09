@@ -110,6 +110,11 @@
   display: none;
 }
 
+/* Safe area for mobile (notch/home indicator) */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
 /* Shared form input styling - use .input-modern for consistency */
 .input-modern {
   width: 100%;

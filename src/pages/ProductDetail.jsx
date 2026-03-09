@@ -168,7 +168,7 @@ const ProductDetail = () => {
 
           {/* Product Details */}
           <div className="md:col-span-2">
-            <h1 className="font-heading text-3xl font-medium text-neutral-dark mb-4">
+            <h1 className="font-heading text-2xl sm:text-3xl md:text-4xl font-medium text-neutral-dark mb-4">
               {product.name}
             </h1>
 
@@ -214,7 +214,7 @@ const ProductDetail = () => {
               <button
                 type="button"
                 onClick={handleShare}
-                className="p-3 rounded-full border-2 border-neutral-dark/20 text-neutral-dark hover:border-primary hover:text-primary transition-colors"
+                className="min-w-[44px] min-h-[44px] p-3 rounded-full border-2 border-neutral-dark/20 text-neutral-dark hover:border-primary hover:text-primary transition-colors touch-manipulation"
                 aria-label="Share"
               >
                 <Share2 size={20} />
@@ -235,7 +235,7 @@ const ProductDetail = () => {
             </div>
 
             {/* Sticky add-to-cart bar (mobile) */}
-            <div className="lg:hidden fixed bottom-20 left-0 right-0 z-30 p-4 bg-white border-t border-black/10 flex gap-3 safe-area-pb">
+            <div className="lg:hidden fixed bottom-[72px] left-0 right-0 z-30 p-4 bg-white border-t border-black/10 flex gap-3 safe-area-pb">
               <button
                 type="button"
                 onClick={handleAddToCart}

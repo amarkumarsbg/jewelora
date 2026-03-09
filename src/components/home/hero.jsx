@@ -65,7 +65,7 @@ const Hero = () => {
 
   return (
     <section className="relative min-h-[50vh] md:min-h-[55vh] flex overflow-hidden bg-primary">
-      <div className="flex flex-col md:flex-row w-full max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Left: Details */}
         <div className="flex-1 flex flex-col justify-center px-6 py-10 md:py-14 md:pl-12 md:pr-8 order-2 md:order-1">
           <AnimatePresence mode="wait">
@@ -135,7 +135,7 @@ const Hero = () => {
           <button
             type="button"
             onClick={() => setCurrentIndex((i) => (i + 1) % products.length)}
-            className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
+            className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors touch-manipulation"
             aria-label="Next"
           >
             <ChevronRight size={22} />
@@ -146,10 +146,10 @@ const Hero = () => {
                 key={i}
                 type="button"
                 onClick={() => setCurrentIndex(i)}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === currentIndex ? "bg-white w-6" : "bg-white/50 w-1.5 hover:bg-white/70"
-                }`}
                 aria-label={`Go to slide ${i + 1}`}
+                className={`min-w-[44px] min-h-[44px] rounded-full transition-all touch-manipulation ${
+                  i === currentIndex ? "bg-white w-8 h-3" : "bg-white/50 w-3 h-3 hover:bg-white/70"
+                }`}
               />
             ))}
           </div>

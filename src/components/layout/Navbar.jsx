@@ -118,7 +118,7 @@ const Navbar = () => {
                     <NavLink
                       to="/wishlist"
                       onClick={closeMenu}
-                      className="relative p-2 text-neutral-dark hover:text-primary transition-colors"
+                      className="relative min-w-[44px] min-h-[44px] p-3 flex items-center justify-center text-neutral-dark hover:text-primary transition-colors touch-manipulation"
                     >
                       <Heart size={20} />
                       {wishlistCount > 0 && (
@@ -128,10 +128,10 @@ const Navbar = () => {
                       )}
                     </NavLink>
                   )}
-                  <button
+                    <button
                     type="button"
                     onClick={() => setCartDrawerOpen(true)}
-                      className="relative p-2 text-neutral-dark hover:text-primary transition-colors"
+                    className="relative min-w-[44px] min-h-[44px] p-3 flex items-center justify-center text-neutral-dark hover:text-primary transition-colors touch-manipulation"
                     aria-label="Open cart"
                   >
                     <motion.span
@@ -154,7 +154,7 @@ const Navbar = () => {
                   <button
                     type="button"
                     onClick={() => setProfileOpen(!profileOpen)}
-                    className="flex items-center justify-center w-10 h-10 rounded-full border border-primary text-primary hover:bg-primary-light transition-colors"
+                    className="flex items-center justify-center min-w-[44px] min-h-[44px] w-11 h-11 rounded-full border border-primary text-primary hover:bg-primary-light transition-colors touch-manipulation"
                   >
                     <User size={18} />
                   </button>
@@ -328,7 +328,7 @@ const Navbar = () => {
                 <button
                   type="button"
                   onClick={closeMenu}
-                  className="p-2 text-neutral-dark hover:text-primary"
+                  className="min-w-[44px] min-h-[44px] p-2 flex items-center justify-center text-neutral-dark hover:text-primary touch-manipulation"
                 >
                   <X size={24} />
                 </button>

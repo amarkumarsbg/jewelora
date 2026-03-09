@@ -85,7 +85,7 @@ const Footer = () => {
                 href="https://wa.me/919129987687?text=Hi!%20I'd%20like%20to%20know%20more%20about%20your%20jewelry%20collection."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2.5 rounded-full bg-[#25D366] text-white hover:bg-[#20BD5A] hover:scale-110 transition-all"
+                className="min-w-[44px] min-h-[44px] p-3 flex items-center justify-center rounded-full bg-[#25D366] text-white hover:bg-[#20BD5A] hover:scale-110 transition-all touch-manipulation"
                 aria-label="Chat on WhatsApp"
               >
                 <FaWhatsapp size={20} />
@@ -103,7 +103,7 @@ const Footer = () => {
                 href="https://www.instagram.com/jew_elora"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2.5 rounded-full bg-white/10 hover:bg-primary transition-colors"
+                className="min-w-[44px] min-h-[44px] p-3 flex items-center justify-center rounded-full bg-white/10 hover:bg-primary transition-colors touch-manipulation"
                 aria-label="Instagram"
               >
                 <Instagram size={20} />
@@ -112,7 +112,7 @@ const Footer = () => {
                 href="https://www.facebook.com/share/1CcdEpJRH4/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2.5 rounded-full bg-white/10 hover:bg-primary transition-colors"
+                className="min-w-[44px] min-h-[44px] p-3 flex items-center justify-center rounded-full bg-white/10 hover:bg-primary transition-colors touch-manipulation"
                 aria-label="Facebook"
               >
                 <Facebook size={20} />

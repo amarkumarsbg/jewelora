@@ -32,7 +32,7 @@ const AnnouncementBar = () => {
     <div className="bg-gradient-to-r from-primary via-primary-dark to-primary text-white flex items-center justify-center py-2.5 text-xs font-medium tracking-widest uppercase gap-6">
       <button
         type="button"
-        className="p-1.5 hover:bg-white/15 rounded-full transition-all duration-200"
+        className="min-w-[44px] min-h-[44px] p-3 flex items-center justify-center hover:bg-white/15 rounded-full transition-all duration-200 touch-manipulation"
         onClick={prevOffer}
         aria-label="Previous offer"
       >
@@ -41,7 +41,7 @@ const AnnouncementBar = () => {
       <span className="transition-opacity duration-300">{offers[currentIndex]}</span>
       <button
         type="button"
-        className="p-1.5 hover:bg-white/15 rounded-full transition-all duration-200"
+        className="min-w-[44px] min-h-[44px] p-3 flex items-center justify-center hover:bg-white/15 rounded-full transition-all duration-200 touch-manipulation"
         onClick={nextOffer}
         aria-label="Next offer"
       >

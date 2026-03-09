@@ -60,7 +60,7 @@ export default function QuickViewModal({ product, onClose }) {
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/90 hover:bg-neutral-100 text-neutral-dark"
+          className="absolute top-4 right-4 z-10 min-w-[44px] min-h-[44px] p-2.5 flex items-center justify-center rounded-full bg-white/90 hover:bg-neutral-100 text-neutral-dark touch-manipulation"
         >
           <X size={20} />
         </button>

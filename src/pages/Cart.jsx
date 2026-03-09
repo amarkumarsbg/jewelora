@@ -187,7 +187,7 @@ const Cart = () => {
                     <div className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 bg-primary-light/30">
                       <button
                         type="button"
-                        className="p-1 text-primary hover:bg-primary/20 rounded transition-colors"
+                        className="min-w-[44px] min-h-[44px] p-2.5 flex items-center justify-center text-primary hover:bg-primary/20 rounded transition-colors touch-manipulation"
                         onClick={() => handleDecrease(item)}
                         aria-label="Decrease quantity"
                       >
@@ -196,7 +196,7 @@ const Cart = () => {
                       <span className="w-8 text-center font-semibold">{item.quantity}</span>
                       <button
                         type="button"
-                        className="p-1 text-primary hover:bg-primary/20 rounded transition-colors"
+                        className="min-w-[44px] min-h-[44px] p-2.5 flex items-center justify-center text-primary hover:bg-primary/20 rounded transition-colors touch-manipulation"
                         onClick={() => handleIncrease(item)}
                         aria-label="Increase quantity"
                       >

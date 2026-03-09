@@ -38,7 +38,7 @@ export default function ProductImageGallery({ product }) {
         <ProductImageZoom
           src={currentSrc}
           alt={product?.name || "Product"}
-          className="w-full max-h-[500px]"
+          className="w-full max-h-[60vh] sm:max-h-[500px]"
         />
       </motion.div>
 

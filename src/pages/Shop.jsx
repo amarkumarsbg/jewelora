@@ -81,7 +81,7 @@ const Shop = () => {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex flex-wrap gap-4 items-center pt-2 border-t border-black/5"
+                className="flex flex-wrap gap-3 sm:gap-4 items-center pt-2 border-t border-black/5"
               >
                 <span className="text-xs font-medium text-neutral-mid">Price range (₹)</span>
                 <input
@@ -90,16 +90,16 @@ const Shop = () => {
                   placeholder="Min"
                   value={priceRange.min || ""}
                   onChange={(e) => setPriceRange((p) => ({ ...p, min: parseInt(e.target.value) || 0 }))}
-                  className="w-28 rounded-lg border border-black/10 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                  className="min-w-0 flex-1 w-20 sm:w-28 rounded-lg border border-black/10 px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 />
-                <span className="text-neutral-mid">–</span>
+                <span className="text-neutral-mid shrink-0">–</span>
                 <input
                   type="number"
                   min={priceRange.min}
                   placeholder="Max"
                   value={priceRange.max === 100000 ? "" : priceRange.max}
                   onChange={(e) => setPriceRange((p) => ({ ...p, max: parseInt(e.target.value) || 100000 }))}
-                  className="w-28 rounded-lg border border-black/10 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                  className="min-w-0 flex-1 w-20 sm:w-28 rounded-lg border border-black/10 px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 />
               </motion.div>
             )}
