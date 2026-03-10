@@ -40,9 +40,9 @@ const Shop = () => {
       transition={{ duration: 0.3 }}
       className="min-h-screen bg-linen"
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-        {/* Sticky filter bar */}
-        <div className="sticky top-20 z-30 mb-6 -mx-4 px-4 py-4 bg-white/95 backdrop-blur-md border-b border-black/5 shadow-sm rounded-xl">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-0 md:pt-4 pb-6 md:pb-8">
+        {/* Sticky filter bar - flush under nav */}
+        <div className="sticky top-16 sm:top-20 z-30 mb-6 -mx-4 px-4 py-3 sm:py-4 bg-white/95 backdrop-blur-md border-b border-black/5 shadow-sm rounded-b-xl sm:rounded-xl">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">

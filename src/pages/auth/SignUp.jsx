@@ -1,16 +1,26 @@
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "../../firebase";
 import { useAuth } from "../../context/AuthContext";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, Navigate } from "react-router-dom";
 import { useState } from "react";
+import MobileBackHeader from "../../components/ui/MobileBackHeader";
 
 const SignUp = () => {
-  const { updateAuthUser } = useAuth();
+  const { currentUser, updateAuthUser, authLoading } = useAuth();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  if (authLoading) {
+    return (
+      <section className="flex justify-center items-center py-16 px-4 bg-cream min-h-[60vh]">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </section>
+    );
+  }
+  if (currentUser) return <Navigate to="/" replace />;
 
   const handleSignUp = async (e) => {
     e.preventDefault();
@@ -30,8 +40,10 @@ const SignUp = () => {
   };
 
   return (
-    <section className="flex justify-center items-center py-16 px-4 bg-cream min-h-[60vh]">
-      <div className="w-full max-w-md bg-white rounded-lg border border-border p-6 sm:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04)] mx-auto">
+    <section className="flex flex-col pt-0 pb-16 px-4 bg-cream min-h-[60vh]">
+      <MobileBackHeader title="Sign Up" to="/" />
+      <div className="flex justify-center items-center flex-1">
+        <div className="w-full max-w-md bg-white rounded-lg border border-border p-6 sm:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04)] mx-auto">
         <h2 className="text-center font-heading text-2xl font-semibold text-neutral-dark mb-6">
           Create Account
         </h2>
@@ -88,6 +100,7 @@ const SignUp = () => {
             Sign In
           </Link>
         </p>
+        </div>
       </div>
     </section>
   );

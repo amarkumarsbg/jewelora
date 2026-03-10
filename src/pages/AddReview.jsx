@@ -1,12 +1,16 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { db } from "../firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { Star, Send, ImagePlus, X } from "lucide-react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import FeaturedProducts from "../components/home/FeatureProducts";
+import MobileBackHeader from "../components/ui/MobileBackHeader";
 
 const AddReview = () => {
+  const { currentUser, authLoading } = useAuth();
   const [formData, setFormData] = useState({
     userName: "Anonymous",
     customerName: "",
@@ -17,6 +21,15 @@ const AddReview = () => {
   });
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center bg-linen">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (!currentUser) return <Navigate to="/signin" replace />;
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -81,6 +94,7 @@ const AddReview = () => {
 
   return (
     <div className="min-h-screen bg-linen">
+      <MobileBackHeader title="Add Review" to="/reviews" />
       {/* Header */}
       <div className="bg-primary py-8 md:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">

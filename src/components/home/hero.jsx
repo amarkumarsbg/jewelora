@@ -3,10 +3,30 @@ import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useHeroProducts } from "../../hooks/useProducts";
 import OptimizedImage from "../OptimizedImage";
-import { motion, AnimatePresence } from "framer-motion";
+import * as FramerMotion from "framer-motion";
+const { motion: Motion, AnimatePresence } = FramerMotion;
 
 const Hero = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState(null);
+  const [fillProgress, setFillProgress] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  const handleTouchStart = (e) => setTouchStart(e.targetTouches[0].clientX);
+  const handleTouchEnd = (e) => {
+    if (!touchStart || products.length <= 1) return;
+    const diff = touchStart - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      setCurrentIndex((i) =>
+        diff > 0
+          ? (i + 1) % products.length
+          : i === 0
+            ? products.length - 1
+            : i - 1
+      );
+    }
+    setTouchStart(null);
+  };
   const { data: productsRaw = [] } = useHeroProducts();
   const products = [...productsRaw].sort((a, b) => {
     if (a.name === "Emerald Noor Bridal Kundan Necklace Set") return -1;
@@ -14,13 +34,37 @@ const Hero = () => {
     return 0;
   });
 
+  const SLIDE_DURATION_MS = 5000;
+
   useEffect(() => {
     if (products.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % products.length);
-    }, 5000);
+    }, SLIDE_DURATION_MS);
     return () => clearInterval(interval);
   }, [products.length]);
+
+  // Reset fill when slide changes
+  useEffect(() => {
+    setFillProgress(0);
+    setImageLoaded(false);
+  }, [currentIndex]);
+
+  // Fill progress: increases slowly and smoothly over time until image loads
+  useEffect(() => {
+    if (imageLoaded) return;
+    const intervalMs = 100;
+    const step = 100 / (SLIDE_DURATION_MS / intervalMs);
+    const interval = setInterval(() => {
+      setFillProgress((p) => Math.min(p + step, 100));
+    }, intervalMs);
+    return () => clearInterval(interval);
+  }, [currentIndex, imageLoaded]);
+
+  const handleImageLoad = () => {
+    setFillProgress(100);
+    setImageLoaded(true);
+  };
 
   // Fallback hero when no trending products
   if (products.length === 0) {
@@ -28,23 +72,23 @@ const Hero = () => {
       <section className="relative min-h-[50vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#121113] via-[#121113]/95 to-primary-dark/20">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.03\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50" />
         <div className="relative z-10 text-center px-6 py-16">
-          <motion.h1
+          <Motion.h1
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="font-heading text-4xl md:text-5xl lg:text-6xl font-medium text-white tracking-tight"
           >
             Discover Elegance
-          </motion.h1>
-          <motion.p
+          </Motion.h1>
+          <Motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
             className="mt-4 text-lg md:text-xl text-white/80 max-w-xl mx-auto"
           >
             Handcrafted jewelry that defines your style
-          </motion.p>
-          <motion.div
+          </Motion.p>
+          <Motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
@@ -55,7 +99,7 @@ const Hero = () => {
             >
               Shop Now
             </Link>
-          </motion.div>
+          </Motion.div>
         </div>
       </section>
     );
@@ -64,64 +108,157 @@ const Hero = () => {
   const currentProduct = products[currentIndex];
 
   return (
-    <section className="relative min-h-[50vh] md:min-h-[55vh] flex overflow-hidden bg-primary pb-16 lg:pb-0">
+    <section className="relative min-h-[50vh] md:min-h-[55vh] flex overflow-hidden bg-neutral-100 md:bg-primary pb-8 md:pb-16 lg:pb-0 pt-4 md:pt-0">
       <div className="flex flex-col md:flex-row w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Left: Details */}
-        <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 py-8 md:py-14 md:pl-12 md:pr-8 order-2 md:order-1">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentProduct.firestoreId}
-              initial={{ opacity: 0, x: -16 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 16 }}
-              transition={{ duration: 0.3 }}
-              className="text-white"
-            >
-              <p className="text-secondary font-semibold text-lg mb-2">
-                Starting ₹{currentProduct.salePrice || currentProduct.price}
-              </p>
-              <h2 className="font-heading text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold tracking-tight line-clamp-2 text-[#FFF9ED] drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
-                {currentProduct.name}
-              </h2>
-              {currentProduct.salePrice && (
-                <p className="mt-2 text-white/80 text-sm">
-                  <span className="line-through">₹{currentProduct.price}</span>
-                  <span className="ml-2 text-secondary font-semibold">
-                    ₹{currentProduct.salePrice}
-                  </span>
-                </p>
-              )}
-              <Link
-                to={`/product/${currentProduct.firestoreId}`}
-                className="inline-flex items-center justify-center min-h-[44px] mt-6 bg-white text-neutral-dark rounded-full px-8 py-3 text-sm font-semibold uppercase tracking-wider hover:bg-white/95 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 touch-manipulation"
+        {/* Mobile: Card-style banner */}
+        <div
+          className="md:hidden flex flex-col rounded-2xl overflow-hidden bg-primary shadow-lg touch-pan-y"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          {/* Image - full width, prominent */}
+          <div className="relative flex items-center justify-center min-h-[220px] pt-4">
+            <AnimatePresence mode="wait">
+              <Motion.div
+                key={currentIndex}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.02 }}
+                transition={{ duration: 0.4 }}
+                className="w-full flex items-center justify-center"
               >
-                Shop Now
-              </Link>
-            </motion.div>
-          </AnimatePresence>
+                <OptimizedImage
+                  src={currentProduct.imageUrl || currentProduct.image}
+                  alt={currentProduct.name}
+                  width={520}
+                  lazy={false}
+                  className="max-h-[260px] w-auto object-contain"
+                  onLoad={handleImageLoad}
+                />
+              </Motion.div>
+            </AnimatePresence>
+          </div>
+          {/* Text + CTA */}
+          <div className="px-5 pb-5 pt-2">
+            <AnimatePresence mode="wait">
+              <Motion.div
+                key={currentProduct.firestoreId}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="text-white"
+              >
+                <p className="text-secondary font-semibold text-sm mb-1">
+                  Starting ₹{currentProduct.salePrice || currentProduct.price}
+                </p>
+                <h2 className="font-heading text-lg font-semibold tracking-tight line-clamp-2 text-[#FFF9ED]">
+                  {currentProduct.name}
+                </h2>
+                {currentProduct.salePrice && (
+                  <p className="mt-1 text-white/80 text-xs">
+                    <span className="line-through">₹{currentProduct.price}</span>
+                    <span className="ml-2 text-secondary font-semibold">
+                      ₹{currentProduct.salePrice}
+                    </span>
+                  </p>
+                )}
+                <Link
+                  to={`/product/${currentProduct.firestoreId}`}
+                  className="inline-flex items-center justify-center min-h-[44px] mt-4 w-full bg-white text-neutral-dark rounded-xl px-6 py-3 text-sm font-semibold uppercase tracking-wider hover:bg-white/95 active:scale-[0.98] transition-all touch-manipulation"
+                >
+                  Shop Now
+                </Link>
+              </Motion.div>
+            </AnimatePresence>
+          </div>
+          {/* Dash indicators - small by default, active one grows as image loads then resets */}
+          {products.length > 1 && (
+            <div className="flex items-center justify-center gap-2 pb-4">
+              {products.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setCurrentIndex(i)}
+                  className="flex items-center justify-center touch-manipulation flex-shrink-0"
+                  aria-label={`Go to slide ${i + 1}`}
+                >
+                  {i === currentIndex ? (
+                    <Motion.div
+                      className="h-1.5 rounded-full bg-white"
+                      initial={{ width: 8 }}
+                      animate={{
+                        width: 8 + (24 * fillProgress) / 100,
+                      }}
+                      transition={{ duration: 0.6, ease: "easeInOut" }}
+                    />
+                  ) : (
+                    <div className="w-2 h-1.5 rounded-full bg-white/40" />
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Right: Image */}
-        <div className="flex-1 flex items-center justify-center p-6 md:p-10 order-1 md:order-2 bg-white/5 min-h-[280px]">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentIndex}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.02 }}
-              transition={{ duration: 0.4 }}
-              className="w-full max-w-md flex items-center justify-center"
-            >
-              <OptimizedImage
-                src={currentProduct.imageUrl || currentProduct.image}
-                alt={currentProduct.name}
-                width={520}
-                lazy={false}
-                className="max-h-[200px] sm:max-h-[280px] md:max-h-[360px] w-auto object-contain"
-              />
-            </motion.div>
-          </AnimatePresence>
-        </div>
+        {/* Desktop: Original two-column layout */}
+        <>
+          <div className="hidden md:flex flex-1 flex-col justify-center px-4 sm:px-6 py-8 md:py-14 md:pl-12 md:pr-8 order-2 md:order-1">
+            <AnimatePresence mode="wait">
+              <Motion.div
+                key={currentProduct.firestoreId}
+                initial={{ opacity: 0, x: -16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 16 }}
+                transition={{ duration: 0.3 }}
+                className="text-white"
+              >
+                <p className="text-secondary font-semibold text-lg mb-2">
+                  Starting ₹{currentProduct.salePrice || currentProduct.price}
+                </p>
+                <h2 className="font-heading text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold tracking-tight line-clamp-2 text-[#FFF9ED] drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
+                  {currentProduct.name}
+                </h2>
+                {currentProduct.salePrice && (
+                  <p className="mt-2 text-white/80 text-sm">
+                    <span className="line-through">₹{currentProduct.price}</span>
+                    <span className="ml-2 text-secondary font-semibold">
+                      ₹{currentProduct.salePrice}
+                    </span>
+                  </p>
+                )}
+                <Link
+                  to={`/product/${currentProduct.firestoreId}`}
+                  className="inline-flex items-center justify-center min-h-[44px] mt-6 bg-white text-neutral-dark rounded-full px-8 py-3 text-sm font-semibold uppercase tracking-wider hover:bg-white/95 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 touch-manipulation"
+                >
+                  Shop Now
+                </Link>
+              </Motion.div>
+            </AnimatePresence>
+          </div>
+
+          <div className="hidden md:flex flex-1 flex-col items-center justify-center p-4 md:p-10 order-1 md:order-2 bg-white/5 min-h-[280px] relative">
+            <AnimatePresence mode="wait">
+              <Motion.div
+                key={currentIndex}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.02 }}
+                transition={{ duration: 0.4 }}
+                className="w-full max-w-md flex items-center justify-center"
+              >
+                <OptimizedImage
+                  src={currentProduct.imageUrl || currentProduct.image}
+                  alt={currentProduct.name}
+                  width={520}
+                  lazy={false}
+                  className="max-h-[360px] w-auto object-contain"
+                  onLoad={handleImageLoad}
+                />
+              </Motion.div>
+            </AnimatePresence>
+          </div>
+        </>
       </div>
 
       {products.length > 1 && (
@@ -131,7 +268,7 @@ const Hero = () => {
             onClick={() =>
               setCurrentIndex((i) => (i === 0 ? products.length - 1 : i - 1))
             }
-            className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors touch-manipulation"
+            className="hidden md:flex absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors touch-manipulation"
             aria-label="Previous"
           >
             <ChevronLeft size={22} />
@@ -139,7 +276,7 @@ const Hero = () => {
           <button
             type="button"
             onClick={() => setCurrentIndex((i) => (i + 1) % products.length)}
-            className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors touch-manipulation"
+            className="hidden md:flex absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors touch-manipulation"
             aria-label="Next"
           >
             <ChevronRight size={22} />

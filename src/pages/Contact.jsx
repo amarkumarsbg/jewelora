@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { db } from "../firebase";
+import MobileBackHeader from "../components/ui/MobileBackHeader";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import FeaturedProducts from "../components/home/FeatureProducts";
 import { Mail, MapPin, Send } from "lucide-react";
@@ -42,6 +43,7 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-linen">
+      <MobileBackHeader title="Contact Us" to="/" />
       {/* Header */}
       <div className="bg-primary py-8 md:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">

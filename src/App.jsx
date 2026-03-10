@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from "react";
 import toast, { Toaster, ToastBar } from "react-hot-toast";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import TambolaModal from "./components/TambolaModal";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
@@ -20,6 +20,8 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
 const CategoryShowcase = lazy(() => import("./components/home/CategoryShowcase"));
 const SavedAddresses = lazy(() => import("./pages/SavedAddresses"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Payments = lazy(() => import("./pages/Payments"));
 const Sale = lazy(() => import("./pages/Sale"));
 const CustomerReviews = lazy(() => import("./pages/CustomerReviews"));
 const AddReview = lazy(() => import("./pages/AddReview"));
@@ -50,6 +52,9 @@ function PageLoader() {
 }
 
 function App() {
+  const location = useLocation();
+  const hideFooter = ["/signin", "/signup"].includes(location.pathname);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Toaster
@@ -109,6 +114,8 @@ function App() {
             <Route path="/category" element={<CategoryShowcase />} />
             <Route path="/order-confirmation" element={<OrderConfirmation />} />
             <Route path="/saved-address" element={<SavedAddresses />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/payments" element={<Payments />} />
             <Route path="/reviews" element={<CustomerReviews />} />
             <Route path="/add-review" element={<AddReview />} />
             <Route path="/sale" element={<Sale />} />
@@ -132,7 +139,7 @@ function App() {
           </Routes>
         </Suspense>
       </div>
-      <Footer />
+      {!hideFooter && <Footer />}
     </div>
   );
 }

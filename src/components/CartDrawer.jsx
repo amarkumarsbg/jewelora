@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ShoppingCart, LogIn } from "lucide-react";
+import { X, ShoppingCart, LogIn, Minus, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, updateDoc, deleteDoc, doc } from "firebase/firestore";
 import { db } from "../firebase";
+import toast from "react-hot-toast";
 import products from "./shop/product";
 
 const CartDrawer = ({ isOpen, onClose }) => {
@@ -12,11 +13,11 @@ const CartDrawer = ({ isOpen, onClose }) => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const isAdmin = currentUser?.email === "info@jewelora.in";
+  const isAdmin = currentUser?.email?.toLowerCase() === "info@jewelora.in";
 
   useEffect(() => {
     if (!isOpen) return;
-    if (!currentUser || isAdmin) {
+    if (!currentUser) {
       setCartItems([]);
       return;
     }
@@ -37,14 +38,53 @@ const CartDrawer = ({ isOpen, onClose }) => {
       setLoading(false);
     };
     fetchCart();
-  }, [isOpen, currentUser, isAdmin]);
+  }, [isOpen, currentUser]);
 
   const totalPrice = cartItems.reduce(
     (sum, item) => sum + (parseInt(String(item.price).replace(/[^\d]/g, "")) || 0) * (item.quantity || 1),
     0
   );
 
-  const showSignIn = !currentUser || isAdmin;
+  const showSignIn = !currentUser;
+
+  const handleIncrease = async (item) => {
+    const itemRef = doc(db, "carts", currentUser.uid, "items", item.id);
+    const newQty = (item.quantity || 1) + 1;
+    try {
+      await updateDoc(itemRef, { quantity: newQty });
+      setCartItems((prev) =>
+        prev.map((i) => (i.id === item.id ? { ...i, quantity: newQty } : i))
+      );
+    } catch {
+      toast.error("Failed to update quantity");
+    }
+  };
+
+  const handleDecrease = async (item) => {
+    const qty = item.quantity || 1;
+    if (qty <= 1) return;
+    const itemRef = doc(db, "carts", currentUser.uid, "items", item.id);
+    const newQty = qty - 1;
+    try {
+      await updateDoc(itemRef, { quantity: newQty });
+      setCartItems((prev) =>
+        prev.map((i) => (i.id === item.id ? { ...i, quantity: newQty } : i))
+      );
+    } catch {
+      toast.error("Failed to update quantity");
+    }
+  };
+
+  const handleRemove = async (itemId) => {
+    const itemRef = doc(db, "carts", currentUser.uid, "items", itemId);
+    try {
+      await deleteDoc(itemRef);
+      setCartItems((prev) => prev.filter((i) => i.id !== itemId));
+      toast.success("Removed from cart");
+    } catch {
+      toast.error("Failed to remove item");
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -129,19 +169,61 @@ const CartDrawer = ({ isOpen, onClose }) => {
               ) : (
                 <ul className="p-4 space-y-4">
                   {cartItems.map((item) => (
-                    <li key={item.id} className="flex gap-4 p-3 rounded-xl bg-cream/50 border border-black/5">
-                      <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center bg-white rounded-lg overflow-hidden">
+                    <li key={item.id} className="flex gap-3 p-3 rounded-xl bg-cream/50 border border-black/5">
+                      <Link
+                        to={`/product/${item.productId || item.id}`}
+                        onClick={onClose}
+                        className="w-20 h-20 flex-shrink-0 flex items-center justify-center bg-white rounded-lg overflow-hidden"
+                      >
                         <img
                           src={item.image}
                           alt={item.name}
                           className="max-h-full max-w-full object-contain"
                         />
-                      </div>
+                      </Link>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-neutral-dark text-sm line-clamp-2">{item.name}</p>
+                        <Link
+                          to={`/product/${item.productId || item.id}`}
+                          onClick={onClose}
+                          className="font-medium text-neutral-dark text-sm line-clamp-2 hover:text-primary transition-colors"
+                        >
+                          {item.name}
+                        </Link>
                         <p className="text-primary font-semibold text-sm mt-1">
-                          ₹{item.price} × {item.quantity || 1}
+                          ₹{item.price}
                         </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <div className="flex items-center rounded-lg border border-black/10 overflow-hidden">
+                            <button
+                              type="button"
+                              onClick={() => handleDecrease(item)}
+                              disabled={(item.quantity || 1) <= 1}
+                              className="min-w-[36px] min-h-[36px] flex items-center justify-center text-neutral-dark hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+                              aria-label="Decrease quantity"
+                            >
+                              <Minus size={16} />
+                            </button>
+                            <span className="min-w-[32px] text-center text-sm font-medium">
+                              {item.quantity || 1}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleIncrease(item)}
+                              className="min-w-[36px] min-h-[36px] flex items-center justify-center text-neutral-dark hover:bg-neutral-100 touch-manipulation"
+                              aria-label="Increase quantity"
+                            >
+                              <Plus size={16} />
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemove(item.id)}
+                            className="min-w-[36px] min-h-[36px] flex items-center justify-center text-error hover:bg-error/10 rounded-lg transition-colors touch-manipulation"
+                            aria-label="Remove item"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
                       </div>
                     </li>
                   ))}

@@ -25,6 +25,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import ReceiptInvoice from "../components/ReceiptInvoice";
 import { Link } from "react-router-dom";
+import MobileBackHeader from "../components/ui/MobileBackHeader";
 
 // Review Form (modernized)
 const ReviewForm = ({
@@ -257,6 +258,7 @@ const MyOrders = () => {
 
   return (
     <div className="min-h-screen bg-linen">
+      <MobileBackHeader title="My Orders" to="/profile" />
       {/* Header */}
       <div className="bg-primary py-8 md:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">

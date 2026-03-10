@@ -11,6 +11,7 @@ import { MapPin, Trash2, Phone, Mail, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { Link, Navigate } from "react-router-dom";
+import MobileBackHeader from "../components/ui/MobileBackHeader";
 
 const SavedAddresses = () => {
   const { currentUser } = useAuth();
@@ -65,6 +66,7 @@ const SavedAddresses = () => {
 
   return (
     <div className="min-h-screen bg-linen">
+      <MobileBackHeader title="Saved Addresses" to="/profile" />
       {/* Header */}
       <div className="bg-primary py-8 md:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">

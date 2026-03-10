@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Facebook, Instagram, Shield, Truck, RotateCcw, CreditCard } from "lucide-react";
 import { FaWhatsapp, FaXTwitter } from "react-icons/fa6";
 import { useAuth } from "../../context/AuthContext";
@@ -9,8 +9,13 @@ import toast from "react-hot-toast";
 
 const Footer = () => {
   const { currentUser, logout } = useAuth();
+  const location = useLocation();
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterLoading, setNewsletterLoading] = useState(false);
+
+  useEffect(() => {
+    setNewsletterEmail("");
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {
@@ -31,8 +36,13 @@ const Footer = () => {
       });
       setNewsletterEmail("");
       toast.success("Thanks for subscribing! Check your inbox for 10% off.");
-    } catch {
-      toast.error("Something went wrong. Please try again.");
+    } catch (err) {
+      const msg = err?.code === "permission-denied"
+        ? "Newsletter signup is temporarily unavailable."
+        : err?.message?.includes("network")
+          ? "Please check your connection and try again."
+          : "Something went wrong. Please try again.";
+      toast.error(msg);
     } finally {
       setNewsletterLoading(false);
     }

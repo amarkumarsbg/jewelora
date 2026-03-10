@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { Share2 } from "lucide-react";
 import Breadcrumbs from "../components/ui/Breadcrumbs";
+import MobileBackHeader from "../components/ui/MobileBackHeader";
 import { ProductDetailSkeleton } from "../components/ui/Skeleton";
 import ProductImageGallery from "../components/ProductImageGallery";
 import NotifyBackInStock from "../components/NotifyBackInStock";
@@ -145,7 +146,8 @@ const ProductDetail = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+      <MobileBackHeader title={product.name} to="/shop" />
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4 pb-12">
         <Breadcrumbs
           items={
             product.category
@@ -195,7 +197,7 @@ const ProductDetail = () => {
               </div>
             )}
 
-            <div className="flex flex-wrap gap-3">
+            <div className="hidden lg:flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={handleAddToCart}

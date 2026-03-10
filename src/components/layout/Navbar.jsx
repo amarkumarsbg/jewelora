@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { LogIn, ShoppingCart, User, Menu, X, Home, ShoppingBag, LayoutGrid, Info, Heart, Package, MapPin, LogOut, HelpCircle } from "lucide-react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { LogIn, ShoppingCart, User, Menu, X, Home, ShoppingBag, LayoutGrid, Info, Heart, Package, MapPin, LogOut, HelpCircle, CreditCard } from "lucide-react";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { useAddToCartAnimation } from "../../context/AddToCartAnimationContext";
@@ -23,6 +23,8 @@ const navLinks = [
 const Navbar = () => {
   const { currentUser, logout } = useAuth();
   const { wishlistCount } = useWishlist();
+  const location = useLocation();
+  const hideSearch = ["/signin", "/signup"].includes(location.pathname);
   const { bounce } = useAddToCartAnimation();
   const [cartCount, setCartCount] = useState(0);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
@@ -33,13 +35,13 @@ const Navbar = () => {
   const isAdmin = currentUser?.email === "info@jewelora.in";
 
   useEffect(() => {
-    if (!currentUser || isAdmin) return;
+    if (!currentUser) return;
     const unsub = onSnapshot(
       collection(db, "carts", currentUser.uid, "items"),
-      (snap) => setCartCount(snap.size)
+      (snap) => setCartCount(snap.docs.reduce((sum, d) => sum + Number(d.data().quantity ?? 1), 0))
     );
     return () => unsub();
-  }, [currentUser, isAdmin]);
+  }, [currentUser]);
 
   const closeMenu = () => {
     setMobileMenuOpen(false);
@@ -82,10 +84,12 @@ const Navbar = () => {
               </span>
             </NavLink>
 
-            {/* Desktop: Search */}
-            <div className="hidden lg:block">
-              <GlobalSearch />
-            </div>
+            {/* Desktop: Search (hidden on auth pages) */}
+            {!hideSearch && (
+              <div className="hidden lg:block">
+                <GlobalSearch />
+              </div>
+            )}
 
             {/* Desktop Nav Links */}
             <ul className="hidden lg:flex items-center gap-8">
@@ -175,7 +179,7 @@ const Navbar = () => {
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="font-semibold truncate text-sm">
-                                {currentUser.displayName || "User"}
+                                {currentUser.displayName || currentUser.email?.split("@")[0] || "User"}
                               </div>
                               <div className="text-xs text-white/80 truncate">{currentUser.email}</div>
                             </div>
@@ -214,6 +218,26 @@ const Navbar = () => {
                               >
                                 <MapPin size={18} className="text-secondary shrink-0" />
                                 Saved Addresses
+                              </NavLink>
+                            </li>
+                            <li>
+                              <NavLink
+                                to="/payments"
+                                onClick={closeMenu}
+                                className="flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-dark hover:bg-primary-light hover:text-primary transition-colors"
+                              >
+                                <CreditCard size={18} className="text-secondary shrink-0" />
+                                Payments
+                              </NavLink>
+                            </li>
+                            <li>
+                              <NavLink
+                                to="/profile"
+                                onClick={closeMenu}
+                                className="flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-dark hover:bg-primary-light hover:text-primary transition-colors"
+                              >
+                                <User size={18} className="text-secondary shrink-0" />
+                                My Profile
                               </NavLink>
                             </li>
                           </>
@@ -327,23 +351,24 @@ const Navbar = () => {
           <AnimatePresence>
           {mobileMenuOpen && (
             <>
-              <motion.div
-                key="menu-backdrop"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="lg:hidden fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm"
-                onClick={closeMenu}
-                aria-hidden="true"
-              />
-              <motion.div
-                key="menu-panel"
-                initial={{ x: "100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "100%" }}
-                transition={{ type: "tween", duration: 0.25, ease: "easeOut" }}
-                className="lg:hidden fixed right-0 top-0 z-[10000] h-full w-[80%] max-w-[360px] min-w-[280px] bg-white shadow-[0_0_50px_rgba(0,0,0,0.15)] flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+            <motion.div
+              key="menu-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="lg:hidden fixed inset-0 z-[9999] bg-black/40"
+              onClick={closeMenu}
+              aria-hidden="true"
+            />
+            <motion.div
+              key="menu-panel"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "tween", duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+              style={{ willChange: "transform" }}
+              className="lg:hidden fixed right-0 top-0 z-[10000] h-full w-[80%] max-w-[360px] min-w-[280px] bg-white shadow-xl flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
               role="dialog"
               aria-modal="true"
               aria-label="Menu"
@@ -403,20 +428,18 @@ const Navbar = () => {
                   </NavLink>
                 </li>
 
-                {!isAdmin && (
-                  <>
-                    <li className="border-b border-neutral-100">
-                      <button type="button" onClick={() => { setCartDrawerOpen(true); closeMenu(); }} className="flex items-center gap-4 w-full px-5 py-4 text-sm font-medium text-neutral-dark hover:bg-neutral-50 transition-colors text-left">
-                        <ShoppingCart size={22} className="text-neutral-mid shrink-0" />
-                        Cart
-                        {currentUser && cartCount > 0 && (
-                          <span className="ml-auto bg-primary text-white rounded-full min-w-[22px] h-[22px] px-1.5 text-xs flex items-center justify-center font-semibold">
-                            {cartCount}
-                          </span>
-                        )}
-                      </button>
-                    </li>
-                    {currentUser ? (
+                <li className="border-b border-neutral-100">
+                  <button type="button" onClick={() => { setMobileMenuOpen(false); setCartDrawerOpen(true); }} className="flex items-center gap-4 w-full px-5 py-4 text-sm font-medium text-neutral-dark hover:bg-neutral-50 transition-colors text-left">
+                    <ShoppingCart size={22} className="text-neutral-mid shrink-0" />
+                    Cart
+                    {currentUser && !isAdmin && cartCount > 0 && (
+                      <span className="ml-auto bg-primary text-white rounded-full min-w-[22px] h-[22px] px-1.5 text-xs flex items-center justify-center font-semibold">
+                        {cartCount}
+                      </span>
+                    )}
+                  </button>
+                </li>
+                {!isAdmin && currentUser ? (
                       <>
                         <li className="border-b border-neutral-100">
                           <NavLink to="/wishlist" onClick={closeMenu} className={({ isActive }) => `flex items-center gap-4 px-5 py-4 text-sm font-medium text-neutral-dark hover:bg-neutral-50 transition-colors ${isActive ? "bg-primary/5 text-primary" : ""}`}>
@@ -441,6 +464,18 @@ const Navbar = () => {
                             Saved Addresses
                           </NavLink>
                         </li>
+                        <li className="border-b border-neutral-100">
+                          <NavLink to="/payments" onClick={closeMenu} className={({ isActive }) => `flex items-center gap-4 px-5 py-4 text-sm font-medium text-neutral-dark hover:bg-neutral-50 transition-colors ${isActive ? "bg-primary/5 text-primary" : ""}`}>
+                            <CreditCard size={22} className="text-neutral-mid shrink-0" />
+                            Payments
+                          </NavLink>
+                        </li>
+                        <li className="border-b border-neutral-100">
+                          <NavLink to="/profile" onClick={closeMenu} className={({ isActive }) => `flex items-center gap-4 px-5 py-4 text-sm font-medium text-neutral-dark hover:bg-neutral-50 transition-colors ${isActive ? "bg-primary/5 text-primary" : ""}`}>
+                            <User size={22} className="text-neutral-mid shrink-0" />
+                            My Profile
+                          </NavLink>
+                        </li>
                         <li>
                           <button type="button" onClick={handleLogout} className="flex items-center gap-4 w-full px-5 py-4 text-sm font-semibold text-error hover:bg-error/10 transition-colors">
                             <LogOut size={22} className="shrink-0" />
@@ -456,7 +491,6 @@ const Navbar = () => {
                         </NavLink>
                       </li>
                     )}
-                  </>
                 )}
 
                 {isAdmin && (
@@ -478,7 +512,7 @@ const Navbar = () => {
                     </div>
                     <div className="min-w-0">
                       <p className="font-semibold text-neutral-dark truncate">
-                        {currentUser.displayName || "User"}
+                        {currentUser.displayName || currentUser.email?.split("@")[0] || "User"}
                       </p>
                       <p className="text-xs text-neutral-mid truncate">{currentUser.email}</p>
                     </div>
@@ -521,38 +555,34 @@ const Navbar = () => {
           <LayoutGrid size={20} />
           <span className="text-[10px] sm:text-xs">Category</span>
         </NavLink>
-        {!isAdmin && (
-          <>
-            {currentUser && (
-              <NavLink
-                to="/wishlist"
-                onClick={closeMenu}
-                className="flex flex-col items-center justify-center gap-0.5 min-h-[56px] py-2 px-3 sm:px-4 text-neutral-mid hover:text-primary transition-colors relative touch-manipulation"
-              >
-                <Heart size={20} />
-                <span className="text-[10px] sm:text-xs">Wishlist</span>
-                {wishlistCount > 0 && (
-                  <span className="absolute top-1 right-1 bg-primary text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center">
-                    {wishlistCount}
-                  </span>
-                )}
-              </NavLink>
+        {currentUser && !isAdmin && (
+          <NavLink
+            to="/wishlist"
+            onClick={closeMenu}
+            className="flex flex-col items-center justify-center gap-0.5 min-h-[56px] py-2 px-3 sm:px-4 text-neutral-mid hover:text-primary transition-colors relative touch-manipulation"
+          >
+            <Heart size={20} />
+            <span className="text-[10px] sm:text-xs">Wishlist</span>
+            {wishlistCount > 0 && (
+              <span className="absolute top-1 right-1 bg-primary text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center">
+                {wishlistCount}
+              </span>
             )}
-            <button
-              type="button"
-              onClick={() => setCartDrawerOpen(true)}
-              className="flex flex-col items-center justify-center gap-0.5 min-h-[56px] py-2 px-3 sm:px-4 text-neutral-mid hover:text-primary transition-colors relative touch-manipulation"
-            >
-              <ShoppingCart size={20} />
-              <span className="text-[10px] sm:text-xs">Cart</span>
-              {currentUser && cartCount > 0 && (
-                <span className="absolute top-1 right-1 bg-primary text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center">
-                  {cartCount}
-                </span>
-              )}
-            </button>
-          </>
+          </NavLink>
         )}
+        <button
+          type="button"
+          onClick={() => setCartDrawerOpen(true)}
+          className="flex flex-col items-center justify-center gap-0.5 min-h-[56px] py-2 px-3 sm:px-4 text-neutral-mid hover:text-primary transition-colors relative touch-manipulation"
+        >
+          <ShoppingCart size={20} />
+          <span className="text-[10px] sm:text-xs">Cart</span>
+          {currentUser && !isAdmin && cartCount > 0 && (
+            <span className="absolute top-1 right-1 bg-primary text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center">
+              {cartCount}
+            </span>
+          )}
+        </button>
         <NavLink
           to="/about"
           onClick={closeMenu}

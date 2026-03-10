@@ -1,17 +1,20 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { collection, getDocs, deleteDoc, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../context/AuthContext";
 import { useWishlist } from "../context/WishlistContext";
+import { useAddToCartAnimation } from "../context/AddToCartAnimationContext";
 import { motion } from "framer-motion";
 import { Heart, ShoppingBag } from "lucide-react";
+import MobileBackHeader from "../components/ui/MobileBackHeader";
 import OptimizedImage from "../components/OptimizedImage";
 import toast from "react-hot-toast";
 
 const Wishlist = () => {
   const { currentUser } = useAuth();
   const { wishlistIds } = useWishlist();
+  const { triggerAddAnimation } = useAddToCartAnimation();
   const [items, setItems] = useState([]);
 
   useEffect(() => {
@@ -43,10 +46,38 @@ const Wishlist = () => {
     }
   };
 
+  const handleAddToCart = async (item) => {
+    if (!currentUser) {
+      toast("Please sign in to add items to cart.");
+      return;
+    }
+    const productId = item.id || item.firestoreId;
+    const cartItemRef = doc(db, "carts", currentUser.uid, "items", productId);
+    try {
+      const existing = await getDoc(cartItemRef);
+      if (existing.exists()) {
+        await updateDoc(cartItemRef, { quantity: existing.data().quantity + 1 });
+      } else {
+        await setDoc(cartItemRef, {
+          productId,
+          name: item.name,
+          price: item.salePrice || item.price,
+          image: item.image || item.imageUrl,
+          quantity: 1,
+        });
+      }
+      triggerAddAnimation();
+      toast.success("Added to bag!");
+    } catch (err) {
+      toast.error("Could not add to bag");
+    }
+  };
+
   if (!currentUser) {
     return (
-      <section className="py-16 min-h-[50vh] bg-cream">
-        <div className="mx-auto max-w-7xl px-4 text-center">
+      <section className="min-h-[50vh] bg-cream">
+        <MobileBackHeader title="Your Wishlist" to="/" />
+        <div className="mx-auto max-w-7xl px-4 py-16 text-center">
           <Heart className="mx-auto text-primary/50 mb-4" size={48} />
           <h1 className="font-heading text-2xl md:text-3xl text-neutral-dark mb-4">
             Your Wishlist
@@ -66,9 +97,10 @@ const Wishlist = () => {
   }
 
   return (
-    <section className="py-8 md:py-12 bg-cream min-h-screen">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h1 className="font-heading text-3xl md:text-4xl font-medium text-neutral-dark mb-8">
+    <section className="min-h-screen bg-cream">
+      <MobileBackHeader title="Your Wishlist" to="/shop" />
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <h1 className="font-heading text-3xl md:text-4xl font-medium text-neutral-dark mb-8 lg:block hidden">
           Your Wishlist
           {items.length > 0 && (
             <span className="text-neutral-mid font-normal ml-2">({items.length} items)</span>
@@ -134,12 +166,13 @@ const Wishlist = () => {
                     {item.name}
                   </Link>
                   <p className="font-semibold text-primary mt-2">₹{item.price ?? "—"}</p>
-                  <Link
-                    to={`/product/${item.id}`}
-                    className="mt-3 block w-full text-center border-2 border-neutral-dark text-neutral-dark rounded-xl py-2.5 text-xs font-semibold uppercase tracking-wider hover:bg-neutral-dark hover:text-white transition-all"
+                  <button
+                    type="button"
+                    onClick={() => handleAddToCart(item)}
+                    className="mt-3 w-full text-center border-2 border-neutral-dark text-neutral-dark rounded-xl py-2.5 text-xs font-semibold uppercase tracking-wider hover:bg-neutral-dark hover:text-white transition-all"
                   >
-                    View Product
-                  </Link>
+                    Add to Cart
+                  </button>
                 </div>
               </motion.div>
             ))}

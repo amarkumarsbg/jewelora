@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useLocation, Navigate } from "react-router-dom";
+import MobileBackHeader from "../components/ui/MobileBackHeader";
 import { motion } from "framer-motion";
 import { CheckCircle, Package, MapPin, ShoppingBag, Receipt } from "lucide-react";
 import successIcon from "../assets/sucessicon.png";
@@ -29,6 +30,7 @@ const OrderConfirmation = () => {
 
   return (
     <div className="min-h-screen bg-linen">
+      <MobileBackHeader title={isPaid ? "Order Confirmed" : "Order Placed"} to="/orders" />
       {/* Header */}
       <div className="bg-primary py-8 md:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">

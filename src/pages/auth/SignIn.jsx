@@ -1,15 +1,27 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
+import MobileBackHeader from "../../components/ui/MobileBackHeader";
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const SignIn = () => {
+  const { currentUser, authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  if (authLoading) {
+    return (
+      <section className="flex justify-center items-center py-16 px-4 bg-cream min-h-[60vh]">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </section>
+    );
+  }
+  if (currentUser) return <Navigate to="/" replace />;
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -24,8 +36,10 @@ const SignIn = () => {
   };
 
   return (
-    <section className="flex justify-center items-center py-16 px-4 bg-cream min-h-[60vh]">
-      <div className="w-full max-w-md bg-white rounded-lg border border-border p-6 sm:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04)] mx-auto">
+    <section className="flex flex-col pt-0 pb-16 px-4 bg-cream min-h-[60vh]">
+      <MobileBackHeader title="Sign In" to="/" />
+      <div className="flex justify-center items-center flex-1">
+        <div className="w-full max-w-md bg-white rounded-lg border border-border p-6 sm:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04)] mx-auto">
         <h2 className="text-center font-heading text-2xl font-semibold text-neutral-dark mb-6">
           Welcome Back
         </h2>
@@ -77,6 +91,7 @@ const SignIn = () => {
             Sign Up
           </Link>
         </p>
+      </div>
       </div>
     </section>
   );

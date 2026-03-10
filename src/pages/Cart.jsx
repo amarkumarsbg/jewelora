@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import products from "../components/shop/product";
 import { Minus, Plus, Trash2, LogIn, ShoppingBag } from "lucide-react";
+import MobileBackHeader from "../components/ui/MobileBackHeader";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 
@@ -137,9 +138,10 @@ const Cart = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 md:py-12"
     >
-      <h2 className="font-heading text-3xl md:text-4xl font-medium text-neutral-dark mb-8 text-center">
+      <MobileBackHeader title="Your Cart" to="/shop" />
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+      <h2 className="font-heading text-3xl md:text-4xl font-medium text-neutral-dark mb-8 text-center lg:block hidden">
         Your Cart
       </h2>
 
@@ -242,6 +244,7 @@ const Cart = () => {
           </div>
         </div>
       )}
+      </div>
     </motion.div>
   );
 };

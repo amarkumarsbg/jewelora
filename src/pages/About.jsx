@@ -1,6 +1,7 @@
 import React from "react";
 import logo from "../assets/jewelora.jpg";
 import FeaturedProducts from "../components/home/FeatureProducts";
+import MobileBackHeader from "../components/ui/MobileBackHeader";
 import { Instagram, Facebook, Tag, Truck, Users, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { FaWhatsapp, FaXTwitter } from "react-icons/fa6";
@@ -54,7 +55,8 @@ const About = () => {
   return (
     <div className="min-h-screen">
       {/* Content section - header integrated at top */}
-      <section className="bg-cream pt-6 pb-12 md:pt-8 md:pb-16">
+      <section className="bg-cream pt-0 pb-12 md:pb-16">
+        <MobileBackHeader title="About" to="/" />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Compact header strip */}
           <motion.div

@@ -1,19 +1,52 @@
-import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { db } from "../../firebase";
+import { useAuth } from "../../context/AuthContext";
+import { useAddToCartAnimation } from "../../context/AddToCartAnimationContext";
 import { useAllProducts } from "../../hooks/useProducts";
 import { useProductRatings } from "../../hooks/useProductRatings";
 import { useWishlist } from "../../context/WishlistContext";
 import OptimizedImage from "../OptimizedImage";
 import { motion } from "framer-motion";
-import { Heart, Eye } from "lucide-react";
+import { Heart, ShoppingBag } from "lucide-react";
 import toast from "react-hot-toast";
 import QuickViewModal from "../QuickViewModal";
 import { ProductCardSkeleton } from "../ui/Skeleton";
 
 const ProductGrid = ({ category, searchTerm = "", sortOrder = "", minPrice, maxPrice }) => {
+  const { currentUser } = useAuth();
+  const { triggerAddAnimation } = useAddToCartAnimation();
   const { data: allProducts = [], isLoading } = useAllProducts();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const [quickViewProduct, setQuickViewProduct] = useState(null);
+
+  const handleAddToCart = async (prod) => {
+    if (!currentUser) {
+      toast("Please sign in to add items to cart.");
+      return;
+    }
+    if (prod.stock === 0) return;
+    const productId = prod.firestoreId || prod.id;
+    const cartItemRef = doc(db, "carts", currentUser.uid, "items", productId);
+    try {
+      const existing = await getDoc(cartItemRef);
+      if (existing.exists()) {
+        await updateDoc(cartItemRef, { quantity: existing.data().quantity + 1 });
+      } else {
+        await setDoc(cartItemRef, {
+          productId,
+          name: prod.name,
+          price: prod.salePrice || prod.price,
+          image: prod.image || prod.imageUrl,
+          quantity: 1,
+        });
+      }
+      triggerAddAnimation();
+      toast.success("Added to bag!");
+    } catch (err) {
+      toast.error("Could not add to bag");
+    }
+  };
 
   const visibleProducts = useMemo(() => {
     let filtered = allProducts.filter((product) => {
@@ -68,6 +101,7 @@ const ProductGrid = ({ category, searchTerm = "", sortOrder = "", minPrice, maxP
             isInWishlist={isInWishlist(prod.firestoreId || prod.id)}
             onToggleWishlist={toggleWishlist}
             onQuickView={() => setQuickViewProduct(prod)}
+            onAddToCart={() => handleAddToCart(prod)}
             rating={ratingsMap[prod.firestoreId || prod.id]}
           />
         ))}
@@ -84,7 +118,7 @@ const ProductGrid = ({ category, searchTerm = "", sortOrder = "", minPrice, maxP
   );
 };
 
-function ProductCard({ prod, index, isInWishlist, onToggleWishlist, onQuickView, rating }) {
+function ProductCard({ prod, index, isInWishlist, onToggleWishlist, onQuickView, onAddToCart, rating }) {
   const handleWishlist = async (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -99,9 +133,10 @@ function ProductCard({ prod, index, isInWishlist, onToggleWishlist, onQuickView,
       transition={{ delay: Math.min(index * 0.03, 0.3), duration: 0.4 }}
     >
       <div className="relative card-modern bg-white border border-black/5 rounded-2xl overflow-hidden group h-full flex flex-col shadow-sm hover:shadow-xl hover:z-10">
-        <Link
-          to={`/product/${prod.firestoreId || prod.id}`}
-          className="block relative aspect-square bg-white overflow-hidden p-4"
+        <button
+          type="button"
+          onClick={() => onQuickView?.()}
+          className="block relative aspect-square bg-white overflow-hidden p-4 w-full text-left"
         >
           <OptimizedImage
             src={prod.image}
@@ -122,15 +157,16 @@ function ProductCard({ prod, index, isInWishlist, onToggleWishlist, onQuickView,
           >
             <Heart size={16} className={isInWishlist ? "fill-current" : ""} />
           </button>
-        </Link>
+        </button>
 
         <div className="p-5 flex flex-col flex-1">
-            <Link
-              to={`/product/${prod.firestoreId || prod.id}`}
-              className="font-medium text-base text-[#2D2A32] hover:text-primary transition-colors line-clamp-3 mb-3 leading-snug min-h-[3.25rem]"
-            >
+          <button
+            type="button"
+            onClick={() => onQuickView?.()}
+            className="font-medium text-base text-[#2D2A32] hover:text-primary transition-colors line-clamp-3 mb-3 leading-snug min-h-[3.25rem] text-left w-full"
+          >
             {prod.name}
-          </Link>
+          </button>
 
           {(prod.stock === 0 || (prod.stock > 0 && prod.stock <= 5)) && (
             <span className="text-xs font-semibold mb-1">
@@ -168,21 +204,15 @@ function ProductCard({ prod, index, isInWishlist, onToggleWishlist, onQuickView,
             </p>
           )}
 
-          <div className="mt-4 flex gap-2">
-            <button
-              type="button"
-              onClick={(e) => { e.preventDefault(); onQuickView?.(); }}
-              className="flex-1 min-h-[44px] text-center border border-neutral-dark/30 text-neutral-dark rounded-xl py-3 text-xs font-semibold uppercase tracking-wider hover:bg-neutral-dark/5 transition-all touch-manipulation"
-            >
-              <Eye size={14} className="inline mr-1" /> Quick View
-            </button>
-            <Link
-              to={`/product/${prod.firestoreId || prod.id}`}
-              className="flex-1 min-h-[44px] flex items-center justify-center border-2 border-neutral-dark text-neutral-dark rounded-xl py-3 text-xs font-semibold uppercase tracking-wider hover:bg-neutral-dark hover:text-white transition-all duration-200 touch-manipulation"
-            >
-              View Details
-            </Link>
-          </div>
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); onAddToCart?.(); }}
+            className="mt-4 w-full min-h-[48px] flex items-center justify-center gap-2 bg-primary text-white rounded-xl py-3 text-sm font-semibold hover:bg-primary-dark transition-all duration-200 touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={prod.stock === 0}
+          >
+            <ShoppingBag size={18} />
+            Add to Bag
+          </button>
         </div>
       </div>
     </motion.div>

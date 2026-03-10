@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { Outlet, NavLink, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
   Menu,
@@ -25,10 +25,23 @@ const adminNavItems = [
   { path: "/admin/inventory", label: "Inventory", icon: Layers },
 ];
 
+const ADMIN_EMAIL = "info@jewelora.in";
+
 const AdminLayout = () => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, authLoading } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (!currentUser) return <Navigate to="/signin" replace />;
+  const isAdmin = currentUser.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase();
+  if (!isAdmin) return <Navigate to="/" replace />;
 
   const handleLogout = async () => {
     await logout();

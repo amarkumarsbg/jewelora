@@ -3,6 +3,7 @@ import { db } from "../firebase";
 import { collection, getDocs, orderBy, query, limit } from "firebase/firestore";
 import { Star } from "lucide-react";
 import { motion } from "framer-motion";
+import MobileBackHeader from "../components/ui/MobileBackHeader";
 
 const CustomerReviews = () => {
   const [reviews, setReviews] = useState([]);
@@ -41,6 +42,7 @@ const CustomerReviews = () => {
 
   return (
     <div className="min-h-screen bg-linen">
+      <MobileBackHeader title="Customer Reviews" to="/" />
       {/* Header */}
       <div className="bg-primary py-8 md:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
@@ -105,11 +107,11 @@ const CustomerReviews = () => {
                   {review.description}
                 </p>
                 {review.photoUrl && (
-                  <div className="mt-4 overflow-hidden rounded-xl">
+                  <div className="mt-4 overflow-hidden rounded-xl aspect-video max-h-64">
                     <img
                       src={review.photoUrl}
                       alt="Customer review"
-                      className="w-full object-cover max-h-52 hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-contain bg-neutral-50"
                     />
                   </div>
                 )}
