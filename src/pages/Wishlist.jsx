@@ -68,6 +68,7 @@ const Wishlist = () => {
       }
       triggerAddAnimation();
       toast.success("Added to bag!");
+      await handleRemove(productId);
     } catch (err) {
       toast.error("Could not add to bag");
     }
